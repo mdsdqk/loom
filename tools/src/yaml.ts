@@ -1,6 +1,12 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
 import yaml from "js-yaml";
+
+/** Reads and parses a YAML file into an untyped value — callers narrow it (e.g. via a Zod schema). */
+export async function loadYaml(path: string): Promise<unknown> {
+  const text = await readFile(path, "utf8");
+  return yaml.load(text);
+}
 
 export interface OutputOptions {
   /** Explicit output path. If omitted, defaults to the input path with a .yaml extension. */
