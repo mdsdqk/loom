@@ -6,13 +6,15 @@
   "bin": {
     "pdf-parser": "dist/pdf-parser-cli.js",
     "csv-parser": "dist/csv-parser-cli.js",
-    "profile-validate": "dist/profile/validate-cli.js"
+    "profile-validate": "dist/profile/validate-cli.js",
+    "master-resume-validate": "dist/master-resume/validate-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "pdf-parser": "tsx src/pdf-parser-cli.ts",
     "csv-parser": "tsx src/csv-parser-cli.ts",
     "profile-validate": "tsx src/profile/validate-cli.ts",
+    "master-resume-validate": "tsx src/master-resume/validate-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },
@@ -23,6 +25,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9"
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.7.2"
   }
 }
