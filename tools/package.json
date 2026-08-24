@@ -7,7 +7,8 @@
     "pdf-parser": "dist/pdf-parser-cli.js",
     "csv-parser": "dist/csv-parser-cli.js",
     "profile-validate": "dist/profile/validate-cli.js",
-    "master-resume-validate": "dist/master-resume/validate-cli.js"
+    "master-resume-validate": "dist/master-resume/validate-cli.js",
+    "source-normalize": "dist/source-normalization/normalize-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -15,6 +16,7 @@
     "csv-parser": "tsx src/csv-parser-cli.ts",
     "profile-validate": "tsx src/profile/validate-cli.ts",
     "master-resume-validate": "tsx src/master-resume/validate-cli.ts",
+    "source-normalize": "tsx src/source-normalization/normalize-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },
