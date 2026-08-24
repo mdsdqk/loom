@@ -24,7 +24,15 @@ or pending claim has:
 Original candidate imports are normalized into immutable candidate-wide source
 records. Exact conversation messages are stored as stable transcript events.
 Source References point to those records or events without embedding full
-excerpts in the Candidate Profile.
+excerpts in the Candidate Profile. References are run-qualified:
+
+- `source:{run-id}:{source-id}#{record-id}`
+- `transcript:{run-id}#{event-id}`
+
+Run qualification prevents event and source IDs from colliding when
+`/build-profile` reconciles an existing profile in a later run. V1 may retain
+duplicate normalized records across runs instead of hashing or deduplicating
+them.
 
 Candidate-authored imports and unambiguous direct answers become active with
 implicit confirmation unless sources contradict each other. Tentative
@@ -33,11 +41,14 @@ remain pending until hard confirmation. Contradictory assertions remain
 unusable until HITL clarification activates one claim and rejects or
 supersedes the others.
 
-Every factual field in a Master Resume references one or more active Evidence
-Claim IDs. Generation may combine or reframe evidence, but cannot strengthen
+Generated prose in a Master Resume references one or more active Evidence
+Claim IDs. Structured fields copied without rewriting, such as identity,
+company, role, dates, education, and demonstrated skills, carry stable
+`profile_ref` pointers and must exactly match the referenced Candidate Profile
+record. Generation may combine or reframe evidence, but cannot strengthen
 ownership, causality, magnitude, organizational scope, adoption, recency, or
-certainty. Schema validation rejects missing or unusable references before the
-model-based grounding eval runs.
+certainty. Schema validation rejects missing, unusable, or mismatched
+references before the model-based grounding eval runs.
 
 This keeps normal generation context compact. The Candidate Profile contains
 canonical evidence plus short references; the grounding judge receives only

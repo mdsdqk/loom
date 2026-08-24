@@ -95,11 +95,15 @@ description. Profile Build can offer to invoke it after onboarding, but it
 also remains independently callable.
 
 Master Resume Build may ask the candidate to confirm relevant pending
-evidence before drafting. Factual clarifications update the Candidate
-Profile first; tone, ordering, emphasis, and formatting remain presentation
-choices in the resume. A draft becomes the track's `resume.yml` only after
-schema and grounding evals pass and the candidate explicitly accepts it.
-Persistent numbered version history is deferred beyond MVP v1.
+evidence before drafting. It never edits `candidate/profile.yml` directly.
+When a factual clarification or correction is needed, it stops and directs the
+candidate through `/build-profile` reconciliation. The candidate then restarts
+Master Resume Build from the newly promoted profile. This avoids bypassing the
+Profile Build transaction or depending on cross-skill suspended state. Tone,
+ordering, emphasis, and formatting remain presentation choices in the resume.
+A draft becomes the track's `resume.yml` only after schema and grounding evals
+pass and the candidate explicitly accepts it. Persistent numbered version
+history is deferred beyond MVP v1.
 
 ## Evidence Claim
 
@@ -121,13 +125,22 @@ came from without embedding the full source excerpt in normal generation
 context. Original imports and normalized sources remain separate from the
 Candidate Profile.
 
+Source References are run-qualified and follow one of these forms:
+
+- `source:{run-id}:{source-id}#{record-id}`
+- `transcript:{run-id}#{event-id}`
+
+The run qualifier prevents references from different Profile Build runs from
+colliding.
+
 ## Candidate Source
 
 An immutable normalized record derived from a candidate-controlled import,
 such as a resume section or LinkedIn CSV row. Candidate Sources live under
-`candidate/sources/` and have stable IDs. Clarification changes Candidate
-Profile claims; it never rewrites the original import or its normalized
-source record.
+`candidate/sources/` and have IDs qualified by the ingestion run. V1 may store
+duplicate normalized records across runs rather than hashing or deduplicating
+them. Clarification changes Candidate Profile claims; it never rewrites the
+original import or its normalized source record.
 
 ## Exact Transcript
 

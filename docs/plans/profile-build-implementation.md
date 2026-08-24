@@ -50,8 +50,8 @@ candidate/
 
   sources/
     source-manifest.yml
-    sample-resume.yml
-    sample-linkedin-positions.yml
+    run-20260824-a--sample-resume.yml
+    run-20260824-a--sample-linkedin-positions.yml
 
   profile-build/
     runs/
@@ -159,14 +159,33 @@ evidence:
         status: active
         origin: resume
         confirmation: implicit
-        source_refs: [sample-resume#examplecorp-bullet-1]
+        source_refs:
+          - source:run-20260824-a:sample-resume#examplecorp-bullet-1
+
+      - id: examplecorp-developer-platform-adoption
+        statement: "The platform was adopted by several internal teams"
+        status: active
+        origin: interview
+        confirmation: implicit
+        source_refs:
+          - transcript:run-20260824-a#event-38
+
+      - id: examplecorp-lead-scope
+        statement: "Acted as technical lead for the platform"
+        status: active
+        origin: interview
+        confirmation: implicit
+        source_refs:
+          - transcript:run-20260824-a#event-40
 
       - id: examplecorp-developer-platform-impact
         statement: "Reduced environment setup time by about 18%"
         status: pending
         origin: agent_estimate
         confirmation: none
-        source_refs: [sample-resume#examplecorp-bullet-1, transcript#event-42]
+        source_refs:
+          - source:run-20260824-a:sample-resume#examplecorp-bullet-1
+          - transcript:run-20260824-a#event-42
 ```
 
 Claim lifecycle:
@@ -188,9 +207,9 @@ confirmation or an active/pending claim without Source References.
 
 ### Skills
 
-Demonstrated skills require at least one active Evidence Claim ID. Reported
-skills may lack evidence but require HITL before prominent factual use in a
-Master Resume.
+Demonstrated and reported skills have stable IDs. Demonstrated skills require
+at least one active Evidence Claim ID. Reported skills may lack evidence but
+require HITL before prominent factual use in a Master Resume.
 
 ### Preferences and constraints
 
@@ -200,7 +219,7 @@ Master Resume.
   authority: hard | strong | soft
   applies_to: [all]
   status: active
-  source_refs: [transcript#event-72]
+  source_refs: [transcript:run-20260824-a#event-72]
 ```
 
 Hard constraints can block future matching. Strong and soft preferences guide
@@ -268,15 +287,22 @@ readiness and independently approve Master Resume construction.
 
 ### Master Resume
 
-Every factual prose field carries Evidence Claim IDs:
+Every generated factual prose field carries Evidence Claim IDs. Structured
+fields copied without rewriting carry `profile_ref` pointers:
 
 ```yaml
+identity:
+  profile_ref: identity
+  name: "Alex Example"
+  location: "Example City"
+
 summary:
   text: "Senior engineer with experience building reusable platforms..."
   evidence_ids: [examplecorp-developer-platform-built]
 
 experience:
   - id: examplecorp
+    profile_ref: experience.examplecorp
     company: "ExampleCorp"
     role: "Senior Software Engineer"
     dates:
@@ -294,12 +320,21 @@ experience:
           - examplecorp-developer-platform-built
           - examplecorp-developer-platform-adoption
 
+skills:
+  - id: typescript
+    profile_ref: skills.demonstrated.typescript
+    name: "TypeScript"
+
 presentation:
   target_pages: 2
 ```
 
-The same rule applies to project descriptions and recognition. Contact
-formatting and section labels do not need evidence references.
+Generated prose in summaries, introductions, bullets, project descriptions,
+and recognition requires Evidence Claim IDs. Structured facts copied without
+rewriting, including identity, company, role, dates, education, and
+demonstrated skills, require a stable `profile_ref` and must exactly match the
+referenced Candidate Profile record. Contact formatting and section labels do
+not need Evidence Claim IDs.
 
 ## Migrating existing candidate data into `imports/`
 
@@ -324,9 +359,20 @@ At the start of Profile Build:
 3. Parse Markdown directly.
 4. Parse PDF and relevant LinkedIn CSVs with `@loom/tools`.
 5. Normalize extracted records into candidate-wide source YAML.
-6. Record source IDs and normalized paths in `source-manifest.yml`.
+6. Assign run-qualified source and record IDs.
+7. Record source IDs and normalized paths in `source-manifest.yml`.
 
-V1 does not require content hashing or deduplication.
+Source References use:
+
+```text
+source:{run-id}:{source-id}#{record-id}
+transcript:{run-id}#{event-id}
+```
+
+Every ingestion run creates new immutable source records, even when the same
+import appeared in an earlier run. This permits reruns without collisions or
+overwriting old provenance. V1 does not require content hashing or
+deduplication.
 
 Relevant LinkedIn files:
 
@@ -437,9 +483,15 @@ model already running the session rather than failing or skipping the eval
 — the separate-invocation/fresh-eyes property (ADR 0003) still holds even
 without a cost saving.
 
-Deterministic code first enumerates claim-bearing fields and validates their
-references. It rejects missing, dangling, pending, rejected, or superseded
-references before model judgment.
+Deterministic code first validates the complete grounding surface:
+
+- structured copied fields must have resolvable `profile_ref` pointers and
+  exactly match the referenced Candidate Profile records;
+- generated prose must have active Evidence Claim IDs.
+
+It rejects missing, dangling, pending, rejected, superseded, or mismatched
+references before model judgment. Only generated or semantically transformed
+prose needs model judgment.
 
 The judge receives bounded batches containing:
 
@@ -480,15 +532,19 @@ Process:
 
 1. Validate profile state and track approval.
 2. Surface materially useful pending evidence for HITL confirmation or
-   rejection, updating the Candidate Profile first.
+   rejection. If the candidate clarifies it, stop Master Resume Build and
+   direct the candidate through `/build-profile` reconciliation. Never edit
+   `profile.yml` directly. After the validated profile is promoted, restart
+   Master Resume Build from that profile.
 3. Draft an honest track-specific resume using only active Evidence Claims.
 4. For `stretch` or `insufficient` tracks, emphasize transferable evidence and
    trajectory without overstating current scope or seniority.
 5. Write `resume.draft.yml`.
 6. Run schema and grounding evals.
 7. Present the draft and readiness warning to the candidate.
-8. Apply candidate edits. Factual changes update the Candidate Profile;
-   presentation changes stay in the resume.
+8. Apply candidate edits. Presentation changes stay in the resume. A factual
+   change stops the workflow and follows the same `/build-profile`
+   reconciliation path before Master Resume Build is restarted.
 9. Re-run schema and grounding evals.
 10. On explicit approval, promote the draft to `resume.yml`.
 
@@ -589,6 +645,9 @@ Cover at least:
 - readiness without candidate acknowledgement or build approval;
 - Master Resume factual field without evidence IDs;
 - Master Resume reference to pending or rejected evidence;
+- Master Resume structured field with a missing, dangling, or mismatched
+  `profile_ref`;
+- transcript and source references missing their run qualifier;
 - valid two-page presentation target.
 
 ### Synthetic Profile Build fixture
@@ -627,8 +686,9 @@ final manual acceptance.
 4. Complete with one pending non-blocking gap.
 5. Verify schema and grounding reports, then promote the profile.
 6. Build one strong and one stretch Master Resume.
-7. Confirm pending evidence pauses generation and updates the profile only
-   after HITL.
-8. Edit a factual resume field, update the profile, and re-evaluate.
+7. Confirm pending evidence stops generation and directs the candidate through
+   `/build-profile` reconciliation.
+8. Restart Master Resume Build after promotion, edit a factual resume field,
+   and confirm it follows the same stop/reconcile/restart path.
 9. Explicitly accept the validated Master Resumes.
 10. Confirm ignored personal artifacts do not appear in git status.

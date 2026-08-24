@@ -116,9 +116,11 @@ resolution below is superseded on the input model; the interaction flow
    - Adjust language/tone for this role
    - Never invent facts
    - Use only active Candidate Profile Evidence Claims
-   - Attach evidence_ids to every factual prose field
-   - If relevant pending evidence could materially improve the resume, pause
-     for HITL confirmation and update the Candidate Profile before generation
+   - Attach evidence_ids to generated factual prose and profile_ref pointers
+     to structured copied fields
+   - If relevant pending evidence could materially improve the resume, stop
+     tailoring and direct the candidate through `/build-profile`
+     reconciliation, then restart tailoring from the promoted profile
    - Respect preferences
    
    Output:
@@ -222,7 +224,9 @@ prominent or factual use.
 `/build-master-resume` skill producing an accepted Master Resume for at least
 one approved Target Track.
 
-**Grounding requirement**: every factual tailored-resume field retains
-Evidence Claim IDs from the Candidate Profile. Generated wording may reframe
-or combine evidence but cannot strengthen ownership, causality, magnitude,
-organizational scope, adoption, recency, or certainty.
+**Grounding requirement**: generated prose retains active Evidence Claim IDs.
+Structured identity, company, role, date, education, and demonstrated-skill
+fields retain `profile_ref` pointers and must exactly match the referenced
+Candidate Profile records. Generated wording may reframe or combine evidence
+but cannot strengthen ownership, causality, magnitude, organizational scope,
+adoption, recency, or certainty.

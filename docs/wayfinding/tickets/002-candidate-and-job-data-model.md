@@ -126,14 +126,33 @@ experience:
             status: active
             origin: resume
             confirmation: implicit
-            source_refs: [sample-resume#examplecorp-bullet-1]
+            source_refs:
+              - source:run-20260824-a:sample-resume#examplecorp-bullet-1
+
+          - id: examplecorp-developer-platform-adoption
+            statement: "The platform was adopted by several internal teams"
+            status: active
+            origin: interview
+            confirmation: implicit
+            source_refs:
+              - transcript:run-20260824-a#event-38
+
+          - id: examplecorp-lead-scope
+            statement: "Acted as technical lead for the platform"
+            status: active
+            origin: interview
+            confirmation: implicit
+            source_refs:
+              - transcript:run-20260824-a#event-40
 
           - id: examplecorp-developer-platform-impact
             statement: "Reduced environment setup time by about 18%"
             status: pending
             origin: agent_estimate
             confirmation: none
-            source_refs: [sample-resume#examplecorp-bullet-1, transcript#event-42]
+            source_refs:
+              - source:run-20260824-a:sample-resume#examplecorp-bullet-1
+              - transcript:run-20260824-a#event-42
 
 skills:
   demonstrated:
@@ -148,7 +167,7 @@ preferences:
     authority: strong
     applies_to: [all]
     status: active
-    source_refs: [transcript#event-72]
+    source_refs: [transcript:run-20260824-a#event-72]
 
 constraints: [...]
 compensation: {...} # optional future matching data
@@ -162,15 +181,18 @@ Original and normalized sources do not live inside `profile.yml`.
 
 **Master Resumes** (candidate/tracks/{track}/resume.yml):
 ```yaml
-name: "Alex Example"
+identity:
+  profile_ref: identity
+  name: "Alex Example"
+  contact: {...}
 title: "Senior Software Engineer"
-contact: {...}
 summary:
   text: "..."
   evidence_ids: ["examplecorp-developer-platform-built"]
 
 experience:
   - id: "examplecorp"
+    profile_ref: experience.examplecorp
     company: "ExampleCorp"
     role: "Senior Software Engineer"
     dates:
@@ -190,28 +212,28 @@ experience:
         tags: ["platform", "leadership", "developer-experience"]
         evidence_ids:
           - "examplecorp-developer-platform-built"
-          - "examplecorp-developer-platform-impact"
-      
-      - text: "Engineered a **service integration layer**..."
-        emphasis: "high"
-        tags: ["architecture", "integration"]
-        evidence_ids: ["examplecorp-service-integration"]
+          - "examplecorp-developer-platform-adoption"
 
 projects: [...]
 skills:
   - category: "Languages"
-    items: ["JavaScript", "TypeScript", "Python", ...]
+    items:
+      - id: typescript
+        profile_ref: skills.demonstrated.typescript
+        name: "TypeScript"
 
 recognition: [...]
 presentation:
   target_pages: 2
 ```
 
-Every factual prose field, including summaries, role introductions, bullets,
-projects, and recognition, references active Candidate Profile Evidence Claim
-IDs. `/build-master-resume` receives no job description. A draft becomes the
-track's `resume.yml` only after schema and grounding evals pass and the
-candidate explicitly accepts it.
+Generated prose, including summaries, role introductions, bullets, projects,
+and recognition, references active Candidate Profile Evidence Claim IDs.
+Structured identity, company, role, date, education, and demonstrated-skill
+fields use `profile_ref` and must exactly match the referenced profile record.
+`/build-master-resume` receives no job description. A draft becomes the track's
+`resume.yml` only after schema and grounding evals pass and the candidate
+explicitly accepts it.
 
 **Tailored Variants** (opportunities/{slug}/artifacts/resume_tailored.vN.yml):
 - Same structure as master, but:
@@ -279,7 +301,8 @@ opportunities/
 - ✅ One master resume per track
 - ✅ Target Tracks pair role family and level
 - ✅ Atomic claims carry compact provenance and confirmation
-- ✅ Every factual resume field references active profile evidence
+- ✅ Generated prose references active evidence; copied structured facts use
+  exact `profile_ref` validation
 - ✅ Bullets have emphasis levels and matching tags
 - ✅ Metadata tracks reasoning separately
 - ✅ Git-friendly (diffs show what changed)

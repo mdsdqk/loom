@@ -497,8 +497,8 @@ statement: "Created migration guides adopted by several teams"
 status: active
 confirmation: implicit
 source_refs:
-  - sample-resume#platform-modernization
-  - transcript#event-42
+  - source:run-20260824-a:sample-resume#platform-modernization
+  - transcript:run-20260824-a#event-42
 ```
 
 This allows generated content to be traced back to normalized immutable
