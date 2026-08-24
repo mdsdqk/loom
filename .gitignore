@@ -4,3 +4,15 @@
 node_modules
 dist
 .turbo
+
+# Candidate user data — keep the directory via .gitkeep
+candidate/*
+!candidate/.gitkeep
+
+# Opportunities user data — keep the directory via .gitkeep
+opportunities/*
+!opportunities/.gitkeep
+
+# Creds
+.env
+**/.env
