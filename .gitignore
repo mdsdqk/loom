@@ -12,3 +12,7 @@ candidate/*
 #opportunity files
 opportunities/*
 ![opportunities/.gitkeep]
+
+#creds
+.env
+**/.env
