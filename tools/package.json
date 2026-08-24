@@ -8,7 +8,11 @@
     "csv-parser": "dist/csv-parser-cli.js",
     "profile-validate": "dist/profile/validate-cli.js",
     "master-resume-validate": "dist/master-resume/validate-cli.js",
-    "source-normalize": "dist/source-normalization/normalize-cli.js"
+    "source-normalize": "dist/source-normalization/normalize-cli.js",
+    "profile-grounding-batches": "dist/grounding-eval/profile-batch-cli.js",
+    "master-resume-grounding-batches": "dist/grounding-eval/master-resume-batch-cli.js",
+    "profile-grounding-result": "dist/grounding-eval/profile-result-cli.js",
+    "master-resume-grounding-result": "dist/grounding-eval/master-resume-result-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -17,6 +21,10 @@
     "profile-validate": "tsx src/profile/validate-cli.ts",
     "master-resume-validate": "tsx src/master-resume/validate-cli.ts",
     "source-normalize": "tsx src/source-normalization/normalize-cli.ts",
+    "profile-grounding-batches": "tsx src/grounding-eval/profile-batch-cli.ts",
+    "master-resume-grounding-batches": "tsx src/grounding-eval/master-resume-batch-cli.ts",
+    "profile-grounding-result": "tsx src/grounding-eval/profile-result-cli.ts",
+    "master-resume-grounding-result": "tsx src/grounding-eval/master-resume-result-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },
