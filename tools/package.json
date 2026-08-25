@@ -1,0 +1,24 @@
+{
+  "name": "@loom/tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "pdf-parser": "dist/pdf-parser-cli.js",
+    "csv-parser": "dist/csv-parser-cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "pdf-parser": "tsx src/pdf-parser-cli.ts",
+    "csv-parser": "tsx src/csv-parser-cli.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^4.9.155",
+    "xlsx": "^0.18.5",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  }
+}
