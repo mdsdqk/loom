@@ -4,7 +4,6 @@ import { createRequire } from "node:module";
 // pdfjs-dist ships its own types under a path TypeScript's NodeNext resolution
 // doesn't always find via the package's `exports` map, so the text-content
 // shapes we actually use are declared locally instead of imported.
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 interface RawTextItem {
