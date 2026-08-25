@@ -1,0 +1,17 @@
+{
+  "name": "loom",
+  "private": true,
+  "packageManager": "pnpm@11.13.0",
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "turbo": "^2.5.8",
+    "tsx": "^4.20.6",
+    "vitest": "^3.2.4",
+    "@types/node": "^24.7.2"
+  }
+}
