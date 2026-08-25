@@ -1,0 +1,6 @@
+*/resume*.pdf
+*linkedin*export*
+
+node_modules
+dist
+.turbo
