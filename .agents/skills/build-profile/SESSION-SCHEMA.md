@@ -89,11 +89,16 @@ starting over).
 Same shape as `candidate/profile.yml` (see `CANDIDATE-PROFILE-SCHEMA.md`)
 — this **is** a Candidate Profile document, just run-scoped and not yet
 promoted. Written after each completed checkpoint, not after every turn.
-Validate it the same way as the canonical file:
+Validate it the same way as the canonical file (absolute path required —
+`pnpm --filter @loom/tools <cli>` runs with `tools/` as its cwd, not the
+repo root):
 
 ```sh
-pnpm --filter @loom/tools profile-validate candidate/profile-build/runs/{run-id}/profile.draft.yml
+pnpm --filter @loom/tools profile-validate <absolute-path>/candidate/profile-build/runs/{run-id}/profile.draft.yml <absolute-path>/candidate/sources <absolute-path>/candidate/profile-build/runs
 ```
+
+(See `EVAL.md` for why the second and third arguments matter — they're
+what make dangling-reference checking real instead of format-only.)
 
 ## profile.eval.yml
 

@@ -1,0 +1,4 @@
+{"event_id": "event-13", "role": "agent", "timestamp": "2026-08-24T13:20:00Z", "text": "How widely was the platform adopted after launch?"}
+{"event_id": "event-14", "role": "candidate", "timestamp": "2026-08-24T13:20:30Z", "text": "I'd say every product team was using it within about two quarters."}
+{"event_id": "event-15", "role": "agent", "timestamp": "2026-08-24T13:22:00Z", "text": "Do you have a sense of how much it cut new-service setup time by?"}
+{"event_id": "event-16", "role": "candidate", "timestamp": "2026-08-24T13:22:40Z", "text": "Hard to say exactly -- maybe somewhere around 70%, but I never measured it."}

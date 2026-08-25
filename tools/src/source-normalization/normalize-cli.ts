@@ -26,7 +26,7 @@ function parseArgs(argv: string[]): CliArgs {
   let runId: string | undefined;
   let sourceId: string | undefined;
   let type: SourceType | undefined;
-  let sourcesDir = "candidate/sources";
+  let sourcesDir: string | undefined;
   const positional: string[] = [];
 
   for (let i = 0; i < argv.length; i++) {
@@ -43,9 +43,11 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   const importPath = positional[0];
-  if (!runId || !sourceId || !type || !importPath) {
+  if (!runId || !sourceId || !type || !importPath || !sourcesDir) {
     throw new Error(
-      "Usage: source-normalize --run <run-id> --source-id <id> --type <resume-markdown|resume-pdf|linkedin-csv> [--sources-dir <dir>] <import-path>"
+      "Usage: source-normalize --run <run-id> --source-id <id> --type <resume-markdown|resume-pdf|linkedin-csv> --sources-dir <absolute-path> <import-path>\n" +
+        "--sources-dir is required (no default): `pnpm --filter @loom/tools <cli>` always runs with tools/ as its cwd, " +
+        "not the repo root, so a bare relative 'candidate/sources' silently resolves to tools/candidate/sources. Pass an absolute path."
     );
   }
 

@@ -6,9 +6,10 @@ description: Turns one usable Candidate Profile and one approved Target Track in
 # Build Master Resume
 
 This is a thin host adapter, not the canonical instructions. Read and
-follow `.agents/skills/build-master-resume/SKILL.md` in full, along with
-its reference docs in the same directory (`MASTER-RESUME-SCHEMA.md`,
-`EVAL.md`) — that's where the actual workflow lives.
+follow `.agents/skills/build-master-resume/SKILL.md` in full — that's
+where the actual workflow lives. Its reference docs in the same directory
+(`MASTER-RESUME-SCHEMA.md`, `EVAL.md`) are for consulting on demand as
+`SKILL.md` points to them, not for preloading up front.
 
 This file exists only because Claude Code discovers project skills under
 `.claude/skills/`, not `.agents/skills/` (see

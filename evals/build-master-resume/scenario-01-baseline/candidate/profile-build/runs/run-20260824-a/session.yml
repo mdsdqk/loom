@@ -1,0 +1,14 @@
+run_id: run-20260824-a
+status: promoted
+seeded_from: null
+started_at: "2026-08-24T13:00:00Z"
+updated_at: "2026-08-24T13:45:00Z"
+
+current_checkpoint: complete
+completed_checkpoints: [identity, experience, skills]
+
+pending_questions: []
+conflicts: []
+gaps: []
+
+last_transcript_event_id: event-16

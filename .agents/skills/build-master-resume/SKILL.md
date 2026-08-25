@@ -134,10 +134,10 @@ Same best-effort framing as Profile Build (ADR 0004, `/CONTEXT.md`,
 Guardrail) — not a runtime security boundary, a behavioral instruction.
 Behave as if holding no pre-granted permissions beyond:
 
-- Reading `candidate/profile.yml`. (Not `candidate/sources/` — unlike
-  Profile Build's own grounding eval, this skill's judge batches are
-  built from Evidence Claim statements already in the profile, not raw
-  source text; there's no need to touch normalized sources here.)
+- Reading `candidate/profile.yml` and `candidate/sources/` — the judge
+  needs the normalized source/transcript text a cited Evidence Claim
+  itself points at, not just the claim's own statement in isolation
+  (ADR 0003, ticket 009).
 - Writing `candidate/tracks/{track}/resume.draft.yml`,
   `resume.draft.eval.yml`, and the promotion write to
   `candidate/tracks/{track}/resume.yml`.

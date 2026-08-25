@@ -7,7 +7,22 @@ function validProfile(): CandidateProfile {
     schema_version: 1,
     status: "usable_with_gaps",
     identity: { name: "Alex Example", location: "Example City", contact: {} },
-    role_tracks: [],
+    role_tracks: [
+      {
+        id: "application-engineering-senior",
+        family: "application-engineering",
+        level: "senior",
+        target_titles: ["Senior Application Engineer"],
+        readiness: {
+          tier: "strong",
+          reasoning: "Solid evidence.",
+          supporting_evidence_ids: ["examplecorp-built"],
+          gaps: [],
+          candidate_acknowledged: true,
+          approved_to_build: true,
+        },
+      },
+    ],
     experience: [
       {
         id: "examplecorp",
@@ -45,7 +60,7 @@ function validProfile(): CandidateProfile {
     projects: [],
     skills: {
       demonstrated: [{ id: "typescript", name: "TypeScript", evidence_ids: ["examplecorp-built"] }],
-      reported: [],
+      reported: [{ id: "tableau", name: "Tableau" }],
     },
     preferences: [],
     constraints: [],
@@ -194,5 +209,49 @@ describe("validateMasterResume", () => {
     });
     const result = validateMasterResume(resume, validProfile());
     expect(result.ok).toBe(false);
+  });
+
+  it("rejects a skill profile_ref pointing at a reported (not demonstrated) skill", () => {
+    const resume = mutateResume((r) => {
+      r.skills[0].profile_ref = "skills.reported.tableau";
+      r.skills[0].name = "Tableau";
+    });
+    const result = validateMasterResume(resume, validProfile());
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.message.includes("demonstrated skill"))).toBe(true);
+  });
+
+  it("rejects a track_id with no matching Target Track in the Candidate Profile", () => {
+    const resume = mutateResume((r) => {
+      r.track_id = "application-engineering-staff";
+    });
+    const result = validateMasterResume(resume, validProfile());
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.path === "track_id")).toBe(true);
+  });
+
+  it("rejects a track_id for a Target Track that isn't approved_to_build", () => {
+    const profile = CandidateProfile.parse({
+      ...validProfile(),
+      role_tracks: [
+        {
+          id: "application-engineering-senior",
+          family: "application-engineering",
+          level: "senior",
+          target_titles: ["Senior Application Engineer"],
+          readiness: {
+            tier: "stretch",
+            reasoning: "Not yet approved.",
+            supporting_evidence_ids: [],
+            gaps: ["not approved"],
+            candidate_acknowledged: true,
+            approved_to_build: false,
+          },
+        },
+      ],
+    });
+    const result = validateMasterResume(validResume(), profile);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.path === "track_id" && i.message.includes("not approved_to_build"))).toBe(true);
   });
 });

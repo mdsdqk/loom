@@ -255,42 +255,61 @@ export const RoleTrack = z.object({
 });
 
 // ---------------------------------------------------------------------------
-// Optional compensation and logistics — future matching data, never blocking
+// Optional compensation and logistics — future matching data, never blocking.
+//
+// The plan requires every *populated* value here to carry the same
+// lifecycle, confirmation, and Source Reference rules as a preference —
+// not just be a bare scalar. Rather than a fixed object of untracked
+// fields, each populated fact is its own provenance-tracked item in a
+// flat list — the same shape preferences already use, so "populated" just
+// means "present in the array," and an unset field is simply absent
+// rather than null. `field` is a free-form label, not a closed enum
+// (unlike everywhere else in this schema): this data is optional,
+// deferred to v2 matching, and never blocking, so a rigid enum here
+// wasn't worth the added surface. Suggested field names, for consistency
+// across profiles — not enforced:
+//   compensation: current_fixed, current_variable, current_equity,
+//     current_currency, minimum_fixed, minimum_total, target_total,
+//     acceptable_variable_percentage, equity_preference, cash_equity_tradeoff
+//   logistics: current_location, acceptable_locations, workplace_modes,
+//     relocation, work_authorization, sponsorship_required, notice_period,
+//     earliest_start_date, employment_types, travel_tolerance,
+//     timezone_overlap
+// A multi-value fact (e.g. several acceptable_locations) is several items
+// sharing the same `field`, one per value — each can be confirmed,
+// revised, or superseded independently, same as Evidence Claims.
 // ---------------------------------------------------------------------------
 
+export const ProvenancedFact = z
+  .object({
+    field: z.string().min(1),
+    value: z.union([z.string(), z.number(), z.boolean()]),
+    status: ClaimStatus,
+    confirmation: ConfirmationTier,
+    source_refs: z.array(SourceRef),
+  })
+  .superRefine((fact, ctx) => {
+    // Same rules as an Evidence Claim (see EvidenceClaim above) -- "the
+    // same lifecycle, confirmation, and Source Reference rules."
+    const isUsable = fact.status === "active" || fact.status === "pending";
+    if (isUsable && fact.source_refs.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["source_refs"],
+        message: "active/pending facts require at least one Source Reference",
+      });
+    }
+    if (fact.status === "active" && fact.confirmation === "none") {
+      ctx.addIssue({ code: "custom", path: ["confirmation"], message: "an active fact cannot have confirmation: none" });
+    }
+  });
+
 export const Compensation = z.object({
-  current: z
-    .object({
-      fixed: z.number().nullable().optional(),
-      variable: z.number().nullable().optional(),
-      equity: z.string().nullable().optional(),
-      currency: z.string().optional(),
-    })
-    .optional(),
-  expectations: z
-    .object({
-      minimum_fixed: z.number().nullable().optional(),
-      minimum_total: z.number().nullable().optional(),
-      target_total: z.number().nullable().optional(),
-      acceptable_variable_percentage: z.number().nullable().optional(),
-      equity_preference: z.enum(["none", "open", "preferred"]).optional(),
-      cash_equity_tradeoff: z.string().nullable().optional(),
-    })
-    .optional(),
+  items: z.array(ProvenancedFact),
 });
 
 export const Logistics = z.object({
-  current_location: z.string().optional(),
-  acceptable_locations: z.array(z.string()).optional(),
-  workplace_modes: z.array(z.enum(["remote", "hybrid", "onsite"])).optional(),
-  relocation: z.record(z.string(), z.unknown()).optional(),
-  work_authorization: z.array(z.string()).optional(),
-  sponsorship_required: z.boolean().nullable().optional(),
-  notice_period: z.string().nullable().optional(),
-  earliest_start_date: z.string().nullable().optional(),
-  employment_types: z.array(z.string()).optional(),
-  travel_tolerance: z.string().nullable().optional(),
-  timezone_overlap: z.array(z.string()).optional(),
+  items: z.array(ProvenancedFact),
 });
 
 // ---------------------------------------------------------------------------
@@ -332,6 +351,23 @@ export const CandidateProfile = CandidateProfileShape.superRefine((profile, ctx)
   const trackIds = profile.role_tracks.map((track) => track.id);
   for (const duplicate of collectDuplicates(trackIds)) {
     ctx.addIssue({ code: "custom", path: ["role_tracks"], message: `duplicate Target Track id: ${duplicate}` });
+  }
+
+  // Master Resume profile_refs like "experience.examplecorp" resolve via
+  // Array.find(item => item.id === segment) -- a duplicate id within one
+  // of these arrays would silently bind to whichever entry Array.find
+  // reaches first, with no error. Checked per-array, not combined across
+  // all three: resolution is always scoped to one specific array by the
+  // profile_ref's own path prefix, so a same-id collision *across*
+  // experience/education/projects can't cause that ambiguity.
+  for (const duplicate of collectDuplicates(profile.experience.map((entry) => entry.id))) {
+    ctx.addIssue({ code: "custom", path: ["experience"], message: `duplicate experience id: ${duplicate}` });
+  }
+  for (const duplicate of collectDuplicates(profile.education.map((entry) => entry.id))) {
+    ctx.addIssue({ code: "custom", path: ["education"], message: `duplicate education id: ${duplicate}` });
+  }
+  for (const duplicate of collectDuplicates(profile.projects.map((entry) => entry.id))) {
+    ctx.addIssue({ code: "custom", path: ["projects"], message: `duplicate project id: ${duplicate}` });
   }
 
   const evidenceGroupsByOwner = [
@@ -391,6 +427,7 @@ export type ReportedSkill = z.infer<typeof ReportedSkill>;
 export type PreferenceItem = z.infer<typeof PreferenceItem>;
 export type TrackReadiness = z.infer<typeof TrackReadiness>;
 export type RoleTrack = z.infer<typeof RoleTrack>;
+export type ProvenancedFact = z.infer<typeof ProvenancedFact>;
 export type Compensation = z.infer<typeof Compensation>;
 export type Logistics = z.infer<typeof Logistics>;
 export type CandidateProfile = z.infer<typeof CandidateProfile>;

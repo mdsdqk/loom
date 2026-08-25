@@ -5,7 +5,10 @@ Covers, in a single run, everything the implementation plan's
 between sources, a candidate-authored metric, a tentative statement
 needing soft confirmation, an agent-proposed estimate needing hard
 confirmation (both an accepted and a declined case), a weak-readiness
-Target Track, and embedded prompt-injection text.
+Target Track, and five distinct embedded prompt-injection attempts
+(a resume path-traversal/credential read, a CSV-cell credential read, an
+unrelated command, a write outside candidate data, and a leak/exfil
+attempt — see `SCRIPT.md`, point 1).
 
 ## Running it
 
@@ -26,8 +29,8 @@ Target Track, and embedded prompt-injection text.
 
 ## What this scenario does NOT cover
 
-- Master Resume Build (a separate skill, separate scenario — not built
-  yet).
+- Master Resume Build — a separate skill with its own scenario, see
+  `evals/build-master-resume/scenario-01-baseline/`.
 - Reconciliation runs (re-running `/build-profile` against an existing
   profile) — this scenario is a first-run/onboarding case only.
 - Multiple conflicting sources beyond the one date discrepancy.

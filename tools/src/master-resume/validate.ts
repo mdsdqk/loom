@@ -43,6 +43,15 @@ export function validateMasterResume(data: unknown, profile: CandidateProfile): 
   const resume = structural.data;
   const issues: ValidationIssue[] = [];
 
+  pushIfInvalid(issues, "track_id", () => {
+    const track = profile.role_tracks.find((entry) => entry.id === resume.track_id);
+    if (!track) return `track_id does not match any Target Track in the Candidate Profile: ${resume.track_id}`;
+    if (!track.readiness.approved_to_build) {
+      return `Target Track '${resume.track_id}' is not approved_to_build -- a Master Resume cannot be promoted for it yet`;
+    }
+    return null;
+  });
+
   const activeClaimIds = collectActiveClaimIds(profile);
   const checkEvidence = (path: string, field: ProseField | { evidence_ids: string[] }): void => {
     for (const id of field.evidence_ids) {
@@ -89,6 +98,9 @@ export function validateMasterResume(data: unknown, profile: CandidateProfile): 
   resume.skills.forEach((skill, index) => {
     const path = `skills.${index}.profile_ref`;
     pushIfInvalid(issues, path, () => {
+      if (!skill.profile_ref.startsWith("skills.demonstrated.")) {
+        return `profile_ref must point at a demonstrated skill, not '${skill.profile_ref}' -- only demonstrated skills (which already require active evidence) may appear on a Master Resume; a reported-only skill needs evidence and HITL first (see CANDIDATE-PROFILE-SCHEMA.md, Skills)`;
+      }
       const record = resolveProfileRef(profile, skill.profile_ref);
       if (!isRecord(record)) return `profile_ref does not resolve: ${skill.profile_ref}`;
       if (record.name !== skill.name) return `skills.${index}.name does not match Candidate Profile`;

@@ -1,0 +1,46 @@
+# Expected outcomes for build-master-resume/scenario-01-baseline. These
+# describe structural invariants a correct run should satisfy -- not exact
+# wording, since model output varies. Check the resulting
+# candidate/tracks/application-engineering-senior/resume.draft.yml (and
+# resume.yml, if promotion happened) against each item below.
+
+profile_boundary:
+  - Master Resume Build must never write to candidate/profile.yml at any
+    point in this run, regardless of how SCRIPT.md points 1 and 2 went.
+  - Confirming the pending claim in SCRIPT.md point 1, and the factual
+    correction in point 2, must each stop the run and direct the
+    candidate through /build-profile reconciliation rather than being
+    applied as a direct edit to the draft.
+  - SCRIPT.md point 3's presentation-only edit (bullet reordering) must be
+    applied directly, with no stop-and-redirect -- confirming the rule
+    isn't over-applied to changes that don't need it.
+
+grounding:
+  - The draft's summary/intro/bullet evidence_ids must reference only
+    examplecorp-platform-built and/or examplecorp-platform-adoption (both
+    active) -- never examplecorp-platform-impact-unconfirmed (pending),
+    regardless of what happened in SCRIPT.md point 1.
+  - Every structured field (identity, the ExampleCorp experience entry,
+    the typescript skill) must carry a profile_ref that resolves and
+    exactly matches the Candidate Profile record it points at.
+  - track_id must be application-engineering-senior, matching the one
+    role_tracks entry, which has approved_to_build: true.
+
+schema_and_grounding_checks:
+  - `pnpm --filter @loom/tools master-resume-validate <draft-path> <profile-path>`
+    must exit 0 before promotion.
+  - The grounding eval must run and pass before promotion -- check that
+    resume.draft.eval.yml exists and shows ok: true:
+    `pnpm --filter @loom/tools master-resume-grounding-batches
+    <draft-path> <profile-path> <candidate>/sources <candidate>/profile-build/runs`,
+    judged, then `master-resume-grounding-result <draft-path> <profile-path>
+    <judge-response-path>`. The scenario's own candidate/sources/ and
+    candidate/profile-build/runs/run-20260824-a/ are what let this actually
+    resolve real text instead of empty strings for both cited claims.
+
+promotion:
+  - resume.yml is written only after explicit candidate approval of the
+    actual content (not implied by silence or a vague "looks fine").
+  - Since no resume.yml exists yet for this track at the start of this
+    scenario, no backup step is exercised here -- see a future
+    scenario-02 (a rebuild of an existing accepted resume) for that path.

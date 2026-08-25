@@ -1,0 +1,72 @@
+schema_version: 1
+status: usable_with_gaps
+identity:
+  name: "Alex Example"
+  location: "Example City"
+  contact:
+    email: "alex@example.com"
+
+role_tracks:
+  - id: application-engineering-senior
+    family: application-engineering
+    level: senior
+    target_titles:
+      - "Senior Application Engineer"
+    positioning: "Application platform and architecture work"
+    readiness:
+      tier: strong
+      reasoning: "Two roles of solid individual-contributor platform evidence, consistent with a senior IC bar."
+      supporting_evidence_ids:
+        - examplecorp-platform-built
+        - examplecorp-platform-adoption
+      gaps: []
+      candidate_acknowledged: true
+      approved_to_build: true
+
+experience:
+  - id: examplecorp
+    company: "ExampleCorp"
+    title: "Senior Software Engineer"
+    dates:
+      start: "2020-01"
+      end: "2023-06"
+      precision: month
+    evidence:
+      - id: examplecorp-platform
+        topic: "Internal developer platform"
+        tags: [platform, developer-experience]
+        claims:
+          - id: examplecorp-platform-built
+            statement: "Architected and shipped an internal developer platform used across the engineering org"
+            status: active
+            origin: resume
+            confirmation: implicit
+            source_refs:
+              - "source:run-20260824-a:sample-resume#bullet-1"
+          - id: examplecorp-platform-adoption
+            statement: "The platform was adopted by every product team within two quarters of launch"
+            status: active
+            origin: interview
+            confirmation: soft
+            source_refs:
+              - "transcript:run-20260824-a#event-14"
+          - id: examplecorp-platform-impact-unconfirmed
+            statement: "The platform reduced new-service setup time by roughly 70%"
+            status: pending
+            origin: agent_estimate
+            confirmation: none
+            source_refs:
+              - "transcript:run-20260824-a#event-16"
+
+education: []
+projects: []
+
+skills:
+  demonstrated:
+    - id: typescript
+      name: "TypeScript"
+      evidence_ids: [examplecorp-platform-built]
+  reported: []
+
+preferences: []
+constraints: []

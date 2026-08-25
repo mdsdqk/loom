@@ -25,7 +25,10 @@ evals/
   {skill-name}/
     {scenario-name}/
       README.md               # what this scenario tests and how to run it
-      candidate/imports/...   # synthetic input files (git-safe, fictional)
+      candidate/...           # synthetic input files (git-safe, fictional) --
+                               #   imports/... for /build-profile (raw resume/LinkedIn),
+                               #   profile.yml directly for /build-master-resume
+                               #   (it takes an already-usable profile, not raw imports)
       SCRIPT.md                # conversation script, for scenarios that need live dialogue
       expected-outcomes.yml   # what a correct run should produce
 ```

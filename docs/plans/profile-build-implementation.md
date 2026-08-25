@@ -232,36 +232,28 @@ that Master Resume Build does not consume them:
 
 ```yaml
 compensation:
-  current:
-    fixed: null
-    variable: null
-    equity: null
-    currency: "<ISO currency code>"
-  expectations:
-    minimum_fixed: null
-    minimum_total: null
-    target_total: null
-    acceptable_variable_percentage: null
-    equity_preference: none | open | preferred
-    cash_equity_tradeoff: null
+  items:
+    - field: target_total
+      value: 9000000
+      status: active
+      confirmation: soft
+      source_refs: ["transcript:run-20260824-a#event-12"]
 
 logistics:
-  current_location: "Example City"
-  acceptable_locations: [...]
-  workplace_modes: [remote, hybrid, onsite]
-  relocation: {...}
-  work_authorization: [...]
-  sponsorship_required: null
-  notice_period: null
-  earliest_start_date: null
-  employment_types: [...]
-  travel_tolerance: null
-  timezone_overlap: [...]
+  items:
+    - field: acceptable_locations
+      value: "Example City"
+      status: active
+      confirmation: implicit
+      source_refs: ["source:run-20260824-a:sample-resume#bullet-2"]
 ```
 
 Every populated value follows the same lifecycle, confirmation, and Source
-Reference rules as other candidate-provided preferences. All fields are
-optional and never block v1 profile usability.
+Reference rules as other candidate-provided preferences — each is its own
+item in a flat list (see `CANDIDATE-PROFILE-SCHEMA.md`, Compensation and
+logistics, for the full field-name reference and the multi-value pattern),
+not a bare scalar. All fields are optional and never block v1 profile
+usability.
 
 ### Target Tracks
 

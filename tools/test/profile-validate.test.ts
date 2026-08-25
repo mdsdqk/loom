@@ -167,6 +167,48 @@ describe("validateCandidateProfile", () => {
     expect(result.issues.some((i) => i.message.includes("duplicate Target Track id"))).toBe(true);
   });
 
+  it("rejects duplicate experience ids -- a Master Resume profile_ref would otherwise silently bind to the wrong one", () => {
+    const profile = mutate((p) => {
+      p.experience.push({ ...p.experience[0], evidence: [] });
+    });
+    const result = validateCandidateProfile(profile);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.message.includes("duplicate experience id"))).toBe(true);
+  });
+
+  it("rejects duplicate education ids", () => {
+    const profile = mutate((p) => {
+      p.education = [
+        { id: "state-university", institution: "State University", evidence: [] },
+        { id: "state-university", institution: "A different school reusing the id", evidence: [] },
+      ];
+    });
+    const result = validateCandidateProfile(profile);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.message.includes("duplicate education id"))).toBe(true);
+  });
+
+  it("rejects duplicate project ids", () => {
+    const profile = mutate((p) => {
+      p.projects = [
+        { id: "minimap", name: "Minimap Visualizer", evidence: [] },
+        { id: "minimap", name: "A different project reusing the id", evidence: [] },
+      ];
+    });
+    const result = validateCandidateProfile(profile);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.message.includes("duplicate project id"))).toBe(true);
+  });
+
+  it("allows the same id to appear once each in experience, education, and projects -- uniqueness is per-array, not combined", () => {
+    const profile = mutate((p) => {
+      p.education = [{ id: "examplecorp", institution: "Reuses the experience entry's id on purpose", evidence: [] }];
+      p.projects = [{ id: "examplecorp", name: "Also reuses it on purpose", evidence: [] }];
+    });
+    const result = validateCandidateProfile(profile);
+    expect(result.ok).toBe(true);
+  });
+
   it("rejects an unsafe slug (path traversal)", () => {
     const profile = mutate((p) => {
       p.experience[0].id = "../escape";
@@ -200,6 +242,88 @@ describe("validateCandidateProfile", () => {
     expect(result.issues.some((i) => i.message.includes("candidate_acknowledged"))).toBe(true);
   });
 
+  describe("compensation and logistics", () => {
+    it("accepts a populated, provenance-tracked compensation fact", () => {
+      const profile = mutate((p) => {
+        p.compensation = {
+          items: [
+            {
+              field: "target_total",
+              value: 9000000,
+              status: "active",
+              confirmation: "soft",
+              source_refs: ["transcript:run-20260824-a#event-12"],
+            },
+          ],
+        };
+      });
+      const result = validateCandidateProfile(profile);
+      expect(result.ok).toBe(true);
+    });
+
+    it("accepts several logistics facts sharing the same field, one per value", () => {
+      const profile = mutate((p) => {
+        p.logistics = {
+          items: [
+            {
+              field: "acceptable_locations",
+              value: "Example City",
+              status: "active",
+              confirmation: "implicit",
+              source_refs: ["source:run-20260824-a:sample-resume#bullet-2"],
+            },
+            {
+              field: "acceptable_locations",
+              value: "Remote",
+              status: "active",
+              confirmation: "implicit",
+              source_refs: ["source:run-20260824-a:sample-resume#bullet-2"],
+            },
+          ],
+        };
+      });
+      const result = validateCandidateProfile(profile);
+      expect(result.ok).toBe(true);
+    });
+
+    it("rejects an active compensation fact with confirmation: none", () => {
+      const profile = mutate((p) => {
+        p.compensation = {
+          items: [
+            {
+              field: "minimum_total",
+              value: 7000000,
+              status: "active",
+              confirmation: "none",
+              source_refs: ["transcript:run-20260824-a#event-12"],
+            },
+          ],
+        };
+      });
+      const result = validateCandidateProfile(profile);
+      expect(result.ok).toBe(false);
+      expect(result.issues.some((i) => i.message.includes("confirmation: none"))).toBe(true);
+    });
+
+    it("rejects an active/pending logistics fact with no Source Reference", () => {
+      const profile = mutate((p) => {
+        p.logistics = {
+          items: [
+            { field: "notice_period", value: "30 days", status: "pending", confirmation: "none", source_refs: [] },
+          ],
+        };
+      });
+      const result = validateCandidateProfile(profile);
+      expect(result.ok).toBe(false);
+      expect(result.issues.some((i) => i.message.includes("Source Reference"))).toBe(true);
+    });
+
+    it("treats absent compensation/logistics as valid -- optional, never blocking", () => {
+      const result = validateCandidateProfile(validProfile());
+      expect(result.ok).toBe(true);
+    });
+  });
+
   describe("resolveSourceRef", () => {
     it("passes when every Source Reference resolves", () => {
       const result = validateCandidateProfile(validProfile(), { resolveSourceRef: () => true });
@@ -218,6 +342,26 @@ describe("validateCandidateProfile", () => {
       // tooling exists to resolve against.
       const result = validateCandidateProfile(validProfile());
       expect(result.ok).toBe(true);
+    });
+
+    it("catches a dangling Source Reference on a compensation/logistics fact, not just Evidence Claims", () => {
+      const profile = mutate((p) => {
+        p.compensation = {
+          items: [
+            {
+              field: "target_total",
+              value: 9000000,
+              status: "active",
+              confirmation: "soft",
+              source_refs: ["transcript:run-20260824-a#event-does-not-exist"],
+            },
+          ],
+        };
+      });
+      const resolveSourceRef = (ref: string): boolean => ref !== "transcript:run-20260824-a#event-does-not-exist";
+      const result = validateCandidateProfile(profile, { resolveSourceRef });
+      expect(result.ok).toBe(false);
+      expect(result.issues.some((i) => i.message.includes("dangling Source Reference"))).toBe(true);
     });
   });
 });

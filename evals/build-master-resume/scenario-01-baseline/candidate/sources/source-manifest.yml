@@ -1,0 +1,6 @@
+sources:
+  - run_id: run-20260824-a
+    source_id: sample-resume
+    source_type: resume_markdown
+    original_path: /tmp/loom-eval-run/candidate/imports/resume.md
+    normalized_path: /tmp/loom-eval-run/candidate/sources/run-20260824-a--sample-resume.yml

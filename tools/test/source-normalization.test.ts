@@ -136,8 +136,18 @@ describe("buildSourceRefIndex + createSourceRefResolver", () => {
     expect(resolver("source:run-a:sample-resume#para-99")).toBe(false);
   });
 
-  it("passes transcript: refs through unresolved (not covered by source normalization)", () => {
+  it("fails closed on a transcript: ref when no transcript index is given -- it does not auto-pass", () => {
     const resolver = createSourceRefResolver(buildSourceRefIndex([]));
+    expect(resolver("transcript:run-a#event-1")).toBe(false);
+  });
+
+  it("resolves a transcript: ref that's present in the given transcript index", () => {
+    const resolver = createSourceRefResolver(buildSourceRefIndex([]), new Set(["transcript:run-a#event-1"]));
     expect(resolver("transcript:run-a#event-1")).toBe(true);
+  });
+
+  it("rejects a transcript: ref not present in the given transcript index", () => {
+    const resolver = createSourceRefResolver(buildSourceRefIndex([]), new Set(["transcript:run-a#event-1"]));
+    expect(resolver("transcript:run-a#event-99")).toBe(false);
   });
 });

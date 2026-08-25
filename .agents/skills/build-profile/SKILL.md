@@ -58,15 +58,22 @@ separate flow — see Start-of-run below.
    added *after* this point need a new run to be picked up — this run's
    grounding corpus is fixed at start, not live-updated mid-session (see
    ADR 0002).
-3. Normalize whatever's listed into `candidate/sources/` — parse Markdown
-   directly, PDF and LinkedIn CSVs via `@loom/tools` (`source-normalize`
-   CLI, see `tools/src/source-normalization/`). Skip the LinkedIn files
-   this project has already decided aren't career evidence (advertising,
-   connections, follows, events, invitations, learning history, receipts,
-   saved alerts, verification exports, messages) — normalize only:
-   `Positions.csv`, `Education.csv`, `Skills.csv`, `Projects.csv`,
-   `Honors.csv`, `Languages.csv`, `Profile.csv`, and `Email Addresses.csv`
-   (identity fields only).
+3. Normalize whatever's listed into `candidate/sources/` via the
+   `source-normalize` CLI — **every** import goes through it, including a
+   Markdown resume; don't parse Markdown directly and write it into
+   `candidate/sources/` by hand, since `source-normalize` is the only
+   thing this skill is permitted to write there (see Guardrails below):
+   ```sh
+   pnpm --filter @loom/tools source-normalize --run <run-id> --source-id sample-resume --type resume-markdown --sources-dir <absolute-path>/candidate/sources <absolute-path>/candidate/imports/resume.md
+   pnpm --filter @loom/tools source-normalize --run <run-id> --source-id linkedin-positions --type linkedin-csv --sources-dir <absolute-path>/candidate/sources <absolute-path>/candidate/imports/linkedin/Positions.csv
+   ```
+   (A PDF resume uses `--type resume-pdf` instead.) Skip the LinkedIn
+   files this project has already decided aren't career evidence
+   (advertising, connections, follows, events, invitations, learning
+   history, receipts, saved alerts, verification exports, messages) —
+   normalize only: `Positions.csv`, `Education.csv`, `Skills.csv`,
+   `Projects.csv`, `Honors.csv`, `Languages.csv`, `Profile.csv`, and
+   `Email Addresses.csv` (identity fields only).
 4. If `candidate/profile.yml` already exists and is `usable_with_gaps` or
    `complete`: this is a **reconciliation run**. Seed the new run's
    working understanding from it. At each checkpoint below, present what
@@ -76,6 +83,33 @@ separate flow — see Start-of-run below.
    v1 can be blunt about it as long as it's always possible at all).
 5. A profile authored outside the normal flow (hand-seeded) is a valid
    starting point too — treat it the same as a reconciliation seed.
+
+## Per-response bookkeeping
+
+This is what actually makes a run resumable (ADR 0002) — without it, an
+interrupted session loses everything, which is the exact failure ADR 0002
+exists to prevent. Do this after **every** candidate response, not just
+at checkpoint boundaries or at the end of the session:
+
+1. **Append the exact exchange to `transcript.jsonl`** — both your
+   question/statement and the candidate's response, verbatim, as the next
+   two events (see `SESSION-SCHEMA.md` for the exact JSONL shape and
+   `event_id` numbering). This is what makes a claim's
+   `transcript:{run-id}#{event-id}` Source Reference actually resolve to
+   something real later, in the grounding eval — an unwritten exchange is
+   an unresolvable citation.
+2. **Update `session.yml`** — current checkpoint, completed checkpoints,
+   any pending question or conflict raised but not yet resolved, any gap
+   identified, and `last_transcript_event_id`.
+
+Additionally, **after each checkpoint is completed** (not every turn):
+
+3. **Write `profile.draft.yml`** — the profile as understood so far,
+   incorporating whatever this checkpoint just settled.
+
+Skipping steps 1–2 for "just this one turn" is exactly how a session
+becomes unresumable — there's no batching or catching up later, the write
+has to happen every turn or the guarantee doesn't hold.
 
 ## Checkpoints
 
@@ -182,6 +216,19 @@ by default, and it blocks `usable_with_gaps` (see `GAP-CHECKLIST.md`).
 If the candidate genuinely doesn't know or care to resolve it in this
 session, that's fine — leave both `pending` and move on; it's a known gap
 for a future run, not a forced decision now.
+
+**Date conflicts specifically** need one extra step: `Experience.dates`
+(and `Education.dates`/`Project.dates`) has no `status`/`confirmation`/
+`source_refs` fields of its own — a plain `StructuredDate` can't carry
+the "both sides, resolved this way, here's why" history the paragraph
+above describes for claims. So when a role's dates conflict across
+sources: represent the conflict as an Evidence Claim in that role's
+`evidence` (e.g. a claim like "Employment ended August 2023," `origin:
+linkedin`, citing the LinkedIn source, with a rejected counterpart citing
+the resume) exactly like any other conflict — *and* once resolved, write
+the confirmed value directly into `Experience.dates` itself. The claim is
+what preserves the provenance; the `dates` field just holds the current,
+resolved value with no history of its own.
 
 ## Target Tracks and readiness
 

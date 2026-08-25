@@ -16,15 +16,12 @@ export async function appendManifestEntry(manifestPath: string, entry: ManifestE
 
 /**
  * Builds an in-memory index of every resolvable `source:{run-id}:{source-id}#{record-id}`
- * reference across a set of normalized sources. Pass the result to
- * validateCandidateProfile's `resolveSourceRef` option (profile/validate.ts)
- * to actually check for dangling Source References — that hook was left
- * unwired when the validator was built, pending this piece.
- *
- * Covers only `source:` refs. `transcript:{run-id}#{event-id}` refs point
- * into a run's transcript.jsonl, which isn't something source
- * normalization produces — that's session/transcript tooling, not built
- * yet.
+ * reference across a set of normalized sources. Combine with
+ * `transcript.js`'s `buildTranscriptRefIndex` and pass both to
+ * `createSourceRefResolver` below to get a resolver covering both ref
+ * kinds — `validateCandidateProfile`'s `resolveSourceRef` option
+ * (profile/validate.ts) needs the combined resolver to actually catch a
+ * dangling reference of either kind.
  */
 export function buildSourceRefIndex(sources: NormalizedSource[]): Set<string> {
   const index = new Set<string>();
@@ -36,6 +33,18 @@ export function buildSourceRefIndex(sources: NormalizedSource[]): Set<string> {
   return index;
 }
 
-export function createSourceRefResolver(index: Set<string>): (ref: string) => boolean {
-  return (ref) => (ref.startsWith("source:") ? index.has(ref) : true);
+/**
+ * Builds a resolver from a `source:` ref index and (optionally) a
+ * `transcript:` ref index (see `transcript.js`'s `buildTranscriptRefIndex`).
+ * Fails closed: a ref not present in either index does not resolve. There
+ * is deliberately no fallback that treats an unrecognized ref kind as
+ * automatically valid — that was this function's original bug (every
+ * `transcript:` ref silently passed regardless of whether the event
+ * actually existed).
+ */
+export function createSourceRefResolver(
+  sourceIndex: Set<string>,
+  transcriptIndex: Set<string> = new Set()
+): (ref: string) => boolean {
+  return (ref) => sourceIndex.has(ref) || transcriptIndex.has(ref);
 }

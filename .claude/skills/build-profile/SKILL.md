@@ -6,10 +6,13 @@ description: Conversational onboarding that turns a candidate's resume, LinkedIn
 # Build Profile
 
 This is a thin host adapter, not the canonical instructions. Read and
-follow `.agents/skills/build-profile/SKILL.md` in full, along with its
-reference docs in the same directory
+follow `.agents/skills/build-profile/SKILL.md` in full — that's where the
+actual workflow lives. Its reference docs in the same directory
 (`CANDIDATE-PROFILE-SCHEMA.md`, `SESSION-SCHEMA.md`, `GAP-CHECKLIST.md`,
-`EVAL.md`) — that's where the actual workflow lives.
+`EVAL.md`) are for consulting on demand as `SKILL.md` points to them, not
+for preloading up front — that split exists specifically to keep this
+skill's context footprint small; loading all four alongside `SKILL.md`
+regardless of whether the current step needs them defeats that.
 
 This file exists only because Claude Code discovers project skills under
 `.claude/skills/`, not `.agents/skills/`. `.agents/skills/` is this

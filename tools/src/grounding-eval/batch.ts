@@ -16,28 +16,36 @@ function indexSourceRecords(sources: NormalizedSource[]): Map<string, string> {
 /**
  * Builds bounded judge batches for a Candidate Profile's own grounding
  * eval: does each claim's `statement` actually match what its sources
- * say? Only `active`/`pending` claims are judged -- `rejected`/
- * `superseded` claims aren't live output, judging them would be wasted
- * work.
+ * say? Only `active` claims are judged — a `pending` claim is, by
+ * definition, not yet confirmed as true, so forcing it through the same
+ * pass/fail gate as an active claim would block promotion over a claim
+ * nobody is actually asserting yet (`usable_with_gaps` explicitly treats
+ * an unresolved pending claim as a non-blocking gap, not a failure).
  *
- * `transcript:` refs aren't resolvable yet (no transcript tooling exists
- * — see source-normalization/manifest.ts's resolver, same gap). They're
- * still included in the batch by reference, just without inlined text,
- * so the judge at least sees that a transcript citation exists.
+ * `transcriptIndex` (from `../transcript.js`'s `indexTranscriptEvents`,
+ * run-qualified `transcript:{run-id}#{event-id}` -> event text) resolves
+ * interview-origin claims' `transcript:` refs — required, not optional,
+ * since silently defaulting it away would reproduce exactly the
+ * "empty-string source text" bug this parameter exists to fix.
  */
-export function buildProfileGroundingBatches(profile: CandidateProfile, sources: NormalizedSource[]): JudgeBatchItem[] {
+export function buildProfileGroundingBatches(
+  profile: CandidateProfile,
+  sources: NormalizedSource[],
+  transcriptIndex: Map<string, string>
+): JudgeBatchItem[] {
   const sourceIndex = indexSourceRecords(sources);
+  const resolveRefText = (ref: string): string => sourceIndex.get(ref) ?? transcriptIndex.get(ref) ?? "";
   const batches: JudgeBatchItem[] = [];
 
   const visitGroups = (ownerPath: string, groups: EvidenceGroup[]): void => {
     groups.forEach((group, groupIndex) => {
       group.claims.forEach((claim, claimIndex) => {
-        if (claim.status !== "active" && claim.status !== "pending") return;
+        if (claim.status !== "active") return;
         batches.push({
           output_path: `${ownerPath}.evidence[${groupIndex}].claims[${claimIndex}]`,
           claim_text: claim.statement,
           evidence: [],
-          sources: claim.source_refs.map((ref) => ({ ref, text: sourceIndex.get(ref) ?? "" })),
+          sources: claim.source_refs.map((ref) => ({ ref, text: resolveRefText(ref) })),
         });
       });
     });
@@ -57,13 +65,29 @@ export function buildProfileGroundingBatches(profile: CandidateProfile, sources:
  * included here — those are checked deterministically (exact match, see
  * master-resume/validate.ts), not by judgment; only generated/
  * transformed prose needs the judge, per the plan.
+ *
+ * Per ADR 0003/ticket 009 the judge gets the referenced Candidate Profile
+ * evidence *and* the normalized sources/transcript events those claims
+ * themselves cite — not just the claim statements in isolation, which
+ * would make this only a paraphrase check against producer-written text
+ * rather than a check against the candidate-controlled corpus. `sources`
+ * and `transcriptIndex` are the same inputs `buildProfileGroundingBatches`
+ * takes, for the same reason.
  */
-export function buildMasterResumeGroundingBatches(resume: MasterResume, profile: CandidateProfile): JudgeBatchItem[] {
-  const claimsById = new Map<string, string>();
+export function buildMasterResumeGroundingBatches(
+  resume: MasterResume,
+  profile: CandidateProfile,
+  sources: NormalizedSource[],
+  transcriptIndex: Map<string, string>
+): JudgeBatchItem[] {
+  const sourceIndex = indexSourceRecords(sources);
+  const resolveRefText = (ref: string): string => sourceIndex.get(ref) ?? transcriptIndex.get(ref) ?? "";
+
+  const claimsById = new Map<string, { statement: string; sourceRefs: string[] }>();
   const collect = (groups: EvidenceGroup[]): void => {
     for (const group of groups) {
       for (const claim of group.claims) {
-        if (claim.status === "active") claimsById.set(claim.id, claim.statement);
+        if (claim.status === "active") claimsById.set(claim.id, { statement: claim.statement, sourceRefs: claim.source_refs });
       }
     }
   };
@@ -72,11 +96,22 @@ export function buildMasterResumeGroundingBatches(resume: MasterResume, profile:
   profile.projects.forEach((entry) => collect(entry.evidence));
 
   const evidenceFor = (ids: string[]): { id: string; statement: string }[] =>
-    ids.filter((id) => claimsById.has(id)).map((id) => ({ id, statement: claimsById.get(id) as string }));
+    ids
+      .filter((id) => claimsById.has(id))
+      .map((id) => ({ id, statement: (claimsById.get(id) as { statement: string }).statement }));
+
+  const sourcesFor = (ids: string[]): { ref: string; text: string }[] => {
+    const refs = new Set<string>();
+    for (const id of ids) {
+      const claim = claimsById.get(id);
+      if (claim) for (const ref of claim.sourceRefs) refs.add(ref);
+    }
+    return [...refs].map((ref) => ({ ref, text: resolveRefText(ref) }));
+  };
 
   const batches: JudgeBatchItem[] = [];
   const pushProse = (path: string, text: string, evidenceIds: string[]): void => {
-    batches.push({ output_path: path, claim_text: text, evidence: evidenceFor(evidenceIds), sources: [] });
+    batches.push({ output_path: path, claim_text: text, evidence: evidenceFor(evidenceIds), sources: sourcesFor(evidenceIds) });
   };
 
   pushProse("summary", resume.summary.text, resume.summary.evidence_ids);

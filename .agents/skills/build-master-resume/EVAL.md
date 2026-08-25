@@ -4,10 +4,15 @@ Same two-check order as Profile Build's evaluation (see
 `/CONTEXT.md`, Eval severity tiers) — deterministic first, judgment
 second, never the reverse.
 
+**Every command below needs absolute paths.** `pnpm --filter @loom/tools <cli>`
+always runs with `tools/` as its cwd, not the repo root — a bare relative
+`candidate/...` path resolves to `tools/candidate/...`, which doesn't
+exist. Resolve every `candidate/...` path to absolute before passing it.
+
 ## 1. Schema and cross-reference validation (deterministic, blocking)
 
 ```sh
-pnpm --filter @loom/tools master-resume-validate candidate/tracks/{track}/resume.draft.yml candidate/profile.yml
+pnpm --filter @loom/tools master-resume-validate <absolute-path>/candidate/tracks/{track}/resume.draft.yml <absolute-path>/candidate/profile.yml
 ```
 
 Unlike Profile Build's schema check, this one is a genuine cross-document
@@ -29,15 +34,23 @@ falling back to the session's own model rather than skipping the eval.
 **Building the judge's input:**
 
 ```sh
-pnpm --filter @loom/tools master-resume-grounding-batches candidate/tracks/{track}/resume.draft.yml candidate/profile.yml
+pnpm --filter @loom/tools master-resume-grounding-batches <absolute-path>/candidate/tracks/{track}/resume.draft.yml <absolute-path>/candidate/profile.yml <absolute-path>/candidate/sources <absolute-path>/candidate/profile-build/runs
 ```
+
+The third and fourth arguments resolve the `source:`/`transcript:`
+references a cited Evidence Claim itself points at — the judge gets the
+actual candidate-controlled corpus behind each claim, not just the
+claim's own statement in isolation (ADR 0003, ticket 009). The fourth
+argument is the whole `runs/` directory, not one specific run — a cited
+Evidence Claim can originate from any Profile Build run that fed into the
+current Candidate Profile, not only the most recent one.
 
 This validates the Candidate Profile first (refusing to build batches
 against an invalid one), then batches every *generated prose* field —
 summary, intros, bullets, project descriptions, recognition — against
-its referenced active Evidence Claims. `profile_ref` fields are **not**
-included; those were already checked exactly in step 1 and don't need
-judgment.
+its referenced active Evidence Claims *and* the sources/transcript events
+those claims cite. `profile_ref` fields are **not** included; those were
+already checked exactly in step 1 and don't need judgment.
 
 Give the judge subagent these batches and this instruction:
 
@@ -63,12 +76,17 @@ overall: pass | fail
 **Combining results:**
 
 ```sh
-pnpm --filter @loom/tools master-resume-grounding-result candidate/tracks/{track}/resume.draft.yml candidate/profile.yml <path-to-judge-response.yml>
+pnpm --filter @loom/tools master-resume-grounding-result <absolute-path>/candidate/tracks/{track}/resume.draft.yml <absolute-path>/candidate/profile.yml <absolute-path-to-judge-response.yml>
 ```
 
 Re-validates the draft (step 1), validates the judge response, and merges
 both. Only `supported` passes — `unsupported`/`ambiguous`/`contradicted`
-all block, same severity as a schema failure. Exit code 0/1.
+all block, same severity as a schema failure. **Coverage is checked, not
+just assumed**: this CLI independently rebuilds the expected batch list
+and confirms the judge actually returned a verdict for every generated
+prose field — an empty or truncated judge response fails rather than
+silently passing, and a declared `overall: fail` blocks even if every
+individual verdict happens to say `supported`. Exit code 0/1.
 
 ## On a blocking failure
 

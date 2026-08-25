@@ -8,8 +8,13 @@ against its own shape (not yet cross-checked against a Candidate Profile
 — see below and `EVAL.md`) via:
 
 ```sh
-pnpm --filter @loom/tools master-resume-validate <path-to-resume.yml> <path-to-profile.yml>
+pnpm --filter @loom/tools master-resume-validate <absolute-path-to-resume.yml> <absolute-path-to-profile.yml>
 ```
+
+**Always pass absolute paths.** `pnpm --filter @loom/tools <cli>` always
+runs with `tools/` as its cwd, not the repo root — a bare relative
+`candidate/...` path resolves to `tools/candidate/...`, which doesn't
+exist.
 
 ## The core distinction: `profile_ref` vs. generated prose
 
@@ -43,8 +48,10 @@ presentation:
 ```
 
 `track_id` must match an entry in the Candidate Profile's `role_tracks`
-with `approved_to_build: true` — Master Resume Build validates this
-before drafting (see `SKILL.md`, step 1).
+with `approved_to_build: true`. This is checked by `master-resume-validate`
+itself (`tools/src/master-resume/validate.ts`), not just something the
+skill is expected to remember to check manually in step 1 — a resume for
+a missing or unapproved track fails deterministic validation outright.
 
 ## Identity
 
@@ -125,10 +132,11 @@ skills:
     name: "TypeScript"              # must match the profile record exactly
 ```
 
-Only demonstrated skills can appear here with a `profile_ref` — there's
-no path for a `reported`-only skill to show up on a Master Resume without
-first becoming demonstrated in the Candidate Profile (see
-`CANDIDATE-PROFILE-SCHEMA.md`, Skills).
+Only demonstrated skills can appear here with a `profile_ref` —
+`master-resume-validate` rejects a `profile_ref` pointing into
+`skills.reported.*` outright, so there's no path for a `reported`-only
+skill to show up on a Master Resume without first becoming demonstrated
+in the Candidate Profile (see `CANDIDATE-PROFILE-SCHEMA.md`, Skills).
 
 ## Presentation
 

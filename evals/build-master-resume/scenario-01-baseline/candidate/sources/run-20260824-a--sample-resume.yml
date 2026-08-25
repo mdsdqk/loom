@@ -1,0 +1,7 @@
+run_id: run-20260824-a
+source_id: sample-resume
+source_type: resume_markdown
+original_path: /tmp/loom-eval-run/candidate/imports/resume.md
+records:
+  - id: bullet-1
+    text: "Architected and shipped an internal developer platform used across the engineering org."

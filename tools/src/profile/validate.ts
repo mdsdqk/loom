@@ -70,6 +70,8 @@ function collectAllSourceRefs(profile: CandidateProfile): string[] {
   for (const entry of profile.education) collectFromGroups(entry.evidence);
   for (const entry of profile.projects) collectFromGroups(entry.evidence);
   for (const item of [...profile.preferences, ...profile.constraints]) refs.push(...item.source_refs);
+  for (const item of profile.compensation?.items ?? []) refs.push(...item.source_refs);
+  for (const item of profile.logistics?.items ?? []) refs.push(...item.source_refs);
 
   return refs;
 }

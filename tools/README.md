@@ -163,10 +163,27 @@ in `src/profile/validate.ts`), so the CLI and (eventually) a skill's own
 eval step get the same thing.
 
 ```sh
-pnpm --filter @loom/tools profile-validate path/to/profile.yml
+pnpm --filter @loom/tools profile-validate path/to/profile.yml [sources-dir] [runs-dir]
 ```
 
+`sources-dir` and `runs-dir` are optional and independent — each enables
+dangling-reference checking for one Source Reference kind (`source:` via
+`sources-dir`, `transcript:` via `runs-dir`). Omitting both checks ref
+format only, not whether the referenced record actually exists.
+
+`runs-dir` is `candidate/profile-build/runs/` — the parent directory
+holding every `{run-id}/` subdirectory, not one specific run. A profile's
+`transcript:` refs can cite any prior run, not just the current one
+(reconciliation keeps earlier runs' claims and their original refs), so
+resolving them means indexing every run's `session.yml` (for `run_id`)
+and `transcript.jsonl` together.
+
 Exit code 0/1 matches pass/fail; failures print `path: message` per issue.
+
+Same repo-root-vs-`tools/`-cwd caveat as `pdf-parser`/`csv-parser` above
+applies to every CLI documented from here on — `pnpm --filter` always
+runs with `tools/` as cwd, so paths need to be absolute or relative to
+`tools/`, not the repo root.
 
 ## `master-resume-validate`
 
@@ -190,22 +207,37 @@ mechanical, not an attempt to judge what's a meaningful claim boundary
 (`src/source-normalization/normalize.ts`).
 
 ```sh
-pnpm --filter @loom/tools source-normalize --run <run-id> --source-id <id> --type resume-markdown|resume-pdf|linkedin-csv [--sources-dir <dir>] <import-path>
+pnpm --filter @loom/tools source-normalize --run <run-id> --source-id <id> --type resume-markdown|resume-pdf|linkedin-csv --sources-dir <dir> <import-path>
 ```
+
+`--sources-dir` is required, not optional — there's no default, since a
+default relative path here would resolve against `tools/`, not the repo
+root, and silently write in the wrong place.
 
 ## `profile-grounding-batches` / `master-resume-grounding-batches`
 
 Build the bounded input batches for a grounding eval's judgment half
-(`src/grounding-eval/batch.ts`) — one Evidence Claim's statement plus its
-resolved source text (Candidate Profile), or one generated prose field
-plus its referenced active claims (Master Resume). Neither of these
-*calls* a judge model — that's a separate agent dispatch only a skill
-session can make (ADR 0003); these just prepare its input.
+(`src/grounding-eval/batch.ts`) — one **active** Evidence Claim's
+statement plus its resolved source/transcript text (Candidate Profile),
+or one generated prose field plus its referenced active claims *and*
+the source/transcript text those claims themselves cite (Master Resume).
+`pending` claims are excluded from the Candidate Profile batch: an
+unconfirmed claim isn't asserted as true yet, so it shouldn't be forced
+through the same blocking pass/fail gate as a confirmed one. Neither of
+these *calls* a judge model — that's a separate agent dispatch only a
+skill session can make (ADR 0003); these just prepare its input.
 
 ```sh
-pnpm --filter @loom/tools profile-grounding-batches path/to/profile.yml path/to/sources-dir
-pnpm --filter @loom/tools master-resume-grounding-batches path/to/resume.yml path/to/profile.yml
+pnpm --filter @loom/tools profile-grounding-batches path/to/profile.yml path/to/sources-dir path/to/runs-dir
+pnpm --filter @loom/tools master-resume-grounding-batches path/to/resume.yml path/to/profile.yml path/to/sources-dir path/to/runs-dir
 ```
+
+`runs-dir` (`candidate/profile-build/runs/`, the parent of every
+`{run-id}/` directory) resolves interview-origin claims' `transcript:`
+references to the candidate's actual words — every run under it gets
+indexed together, since a claim can originate from any prior run, not
+just the current one. Without this argument every such reference resolves
+to empty text.
 
 ## `profile-grounding-result` / `master-resume-grounding-result`
 
@@ -214,10 +246,14 @@ The other half: validates a judge's raw response
 unvalidated) and combines it with the deterministic pre-check issues into
 one final result (`src/grounding-eval/result.ts`). Only a `supported`
 verdict passes; `unsupported`/`ambiguous`/`contradicted` all block, same
-severity.
+severity. Both CLIs independently rebuild the expected batch list and
+check that the judge actually returned a verdict for every item —
+`combineGroundingResult` takes that list as a required argument
+specifically so an empty or truncated judge response fails rather than
+silently passing.
 
 ```sh
-pnpm --filter @loom/tools profile-grounding-result path/to/profile.yml path/to/judge-response.yml
+pnpm --filter @loom/tools profile-grounding-result path/to/profile.yml path/to/judge-response.yml [sources-dir] [runs-dir]
 pnpm --filter @loom/tools master-resume-grounding-result path/to/resume.yml path/to/profile.yml path/to/judge-response.yml
 ```
 
@@ -274,6 +310,8 @@ tools/
     pdf-parse.ts, pdf-parser-cli.ts        # parsePdf() / `pdf-parser`
     csv-parse.ts, csv-parser-cli.ts        # parseTabular() / `csv-parser`
     yaml.ts                                 # shared loadYaml/emitYaml + CLI-arg parsing
+    transcript.ts                          # readTranscript/indexTranscriptEvents/loadRunTranscript
+    resolve-context.ts                     # buildProfileSourceRefResolver (sources + transcript combined)
     profile/
       schema.ts            # CandidateProfile (Zod) + inferred types
       validate.ts           # validateCandidateProfile() -- structural + optional dangling-ref check
@@ -301,5 +339,6 @@ tools/
     master-resume-validate.test.ts
     source-normalization.test.ts
     grounding-eval.test.ts
+    transcript.test.ts
     fixtures/
 ```

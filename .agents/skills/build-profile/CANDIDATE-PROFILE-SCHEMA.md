@@ -6,8 +6,16 @@ Human-readable walkthrough of `candidate/profile.yml`'s shape. The
 doc to match, not the other way around. Validate any draft against it via:
 
 ```sh
-pnpm --filter @loom/tools profile-validate <path-to-profile.yml>
+pnpm --filter @loom/tools profile-validate <absolute-path-to-profile.yml>
 ```
+
+**Always pass absolute paths to these CLIs.** `pnpm --filter @loom/tools <cli>`
+always runs with `tools/` as its working directory, not the repo root — a
+bare relative path like `candidate/profile.yml` resolves to
+`tools/candidate/profile.yml`, which doesn't exist. Resolve `candidate/...`
+paths to absolute ones (e.g. against the repo root you're already
+operating in) before passing them to any command in this file or
+`EVAL.md`.
 
 ## Top level
 
@@ -235,30 +243,47 @@ positioning but never silently gate a track.
 
 ## Compensation and logistics (optional, non-blocking)
 
+Every *populated* fact here carries the same `status`/`confirmation`/
+`source_refs` provenance as an Evidence Claim — not a bare scalar. Each
+one is an item in a flat list, so "populated" means "present in the
+list," and an unset field is simply absent rather than `null`:
+
 ```yaml
 compensation:
-  current: { fixed: null, variable: null, equity: null, currency: null }
-  expectations:
-    minimum_fixed: null
-    minimum_total: null
-    target_total: null
-    acceptable_variable_percentage: null
-    equity_preference: none | open | preferred
-    cash_equity_tradeoff: null
+  items:
+    - field: target_total
+      value: 9000000
+      status: active
+      confirmation: soft
+      source_refs: ["transcript:run-20260824-a#event-12"]
 
 logistics:
-  current_location: "Example City"
-  acceptable_locations: [...]
-  workplace_modes: [remote, hybrid, onsite]
-  relocation: {...}
-  work_authorization: [...]
-  sponsorship_required: null
-  notice_period: null
-  earliest_start_date: null
-  employment_types: [...]
-  travel_tolerance: null
-  timezone_overlap: [...]
+  items:
+    - field: acceptable_locations
+      value: "Example City"
+      status: active
+      confirmation: implicit
+      source_refs: ["source:run-20260824-a:sample-resume#bullet-2"]
+    - field: acceptable_locations
+      value: "Remote"
+      status: active
+      confirmation: implicit
+      source_refs: ["source:run-20260824-a:sample-resume#bullet-2"]
 ```
+
+A multi-value fact (like `acceptable_locations` above) is several items
+sharing the same `field`, one per value — each can be confirmed, revised,
+or superseded independently, the same way Evidence Claims work.
+`field` is a free-form label, not a closed set the schema enforces — this
+data is optional and deferred to v2 matching, so a rigid enum wasn't
+worth the added surface. For consistency, use: `current_fixed`,
+`current_variable`, `current_equity`, `current_currency`, `minimum_fixed`,
+`minimum_total`, `target_total`, `acceptable_variable_percentage`,
+`equity_preference`, `cash_equity_tradeoff` (compensation);
+`current_location`, `acceptable_locations`, `workplace_modes`,
+`relocation`, `work_authorization`, `sponsorship_required`,
+`notice_period`, `earliest_start_date`, `employment_types`,
+`travel_tolerance`, `timezone_overlap` (logistics).
 
 Stored for future matching (v2). Master Resume Build does not read these
 fields — tell the candidate that explicitly when offering to record them,
