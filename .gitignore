@@ -4,3 +4,11 @@
 node_modules
 dist
 .turbo
+
+#candidate files
+candidate/*
+![candidate/.gitkeep]
+
+#opportunity files
+opportunities/*
+![opportunities/.gitkeep]
