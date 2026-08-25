@@ -117,6 +117,8 @@ confirmation. Agent estimates remain pending until hard confirmation.
 Normal generation reads compact Candidate Profile evidence. Grounding evals
 judge bounded claim batches against referenced profile evidence, normalized
 source records, and exact transcript events. Eval reports are retained.
+Source and transcript references include their Profile Build run ID so later
+reconciliation runs cannot create ambiguous references.
 
 ## Master Resume Build
 
@@ -124,11 +126,17 @@ source records, and exact transcript events. Eval reports are retained.
 are one usable Candidate Profile, one approved Target Track, general
 preferences, and presentation preferences. It receives no JD.
 
-Each factual prose field references active Candidate Profile Evidence Claim
-IDs. Pending evidence triggers HITL before drafting. Schema and grounding
-evals run before candidate review and again after candidate edits. Explicit
-candidate approval promotes the validated draft to
-`candidate/tracks/{track}/resume.yml`.
+Generated prose references active Candidate Profile Evidence Claim IDs.
+Structured facts copied without rewriting retain `profile_ref` pointers and
+must exactly match the profile. Pending evidence triggers HITL before
+drafting. Schema and grounding evals run before candidate review and again
+after candidate edits. Explicit candidate approval promotes the validated
+draft to `candidate/tracks/{track}/resume.yml`.
+
+Master Resume Build never edits the canonical profile directly. Factual
+clarification stops the run and directs the candidate through `/build-profile`
+reconciliation. Master Resume Build is then restarted from the promoted
+profile.
 
 Target Tracks pair role family and level, for example
 `application-engineering-senior` and `application-engineering-staff`.

@@ -65,6 +65,16 @@ Inputs are normalized into immutable candidate-wide records under
 to those records or to exact transcript events. Full excerpts and provenance
 data are not copied into normal generation context.
 
+References are qualified by the ingestion run:
+
+```text
+source:{run-id}:{source-id}#{record-id}
+transcript:{run-id}#{event-id}
+```
+
+Each run creates new immutable normalized records, even when an import appeared
+in an earlier run. V1 does not hash or deduplicate them.
+
 When employer domain or scale remains ambiguous, Profile Build may perform a
 web lookup. Lookup results inform Track Readiness context only, never candidate
 career evidence. URLs and compact summaries remain in the run log.

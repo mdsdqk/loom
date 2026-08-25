@@ -19,12 +19,12 @@ the separate-invocation "fresh eyes" property is the part that matters
 most, the cost saving is a bonus when available. Candidate Profile and
 each Master Resume are evaluated separately.
 
-Deterministic validation first checks that each factual output field has
-active Evidence Claim references. The judge then evaluates bounded claim
-batches against the referenced Candidate Profile evidence, normalized
-immutable source records, and relevant exact transcript events. It returns
-a structured verdict for each claim: `supported`, `unsupported`,
-`ambiguous`, or `contradicted`.
+Deterministic validation first checks that generated prose has active Evidence
+Claim references and that structured copied fields exactly match their
+`profile_ref` targets. The judge then evaluates bounded prose-claim batches
+against the referenced Candidate Profile evidence, normalized immutable source
+records, and relevant exact transcript events. It returns a structured verdict
+for each claim: `supported`, `unsupported`, `ambiguous`, or `contradicted`.
 
 This design gives the judge the actual source corpus rather than only a
 producer-written transcript summary, while avoiding one oversized prompt.

@@ -34,14 +34,19 @@ It receives no job description.
 1. Validate profile usability, Target Track acknowledgement, and build
    approval.
 2. Identify materially relevant pending evidence. Pause for HITL confirmation
-   or rejection before drafting, and update the Candidate Profile first.
+   or rejection before drafting. If clarification is needed, stop this run and
+   direct the candidate through `/build-profile` reconciliation; Master Resume
+   Build never edits `candidate/profile.yml` directly. Restart Master Resume
+   Build from the promoted profile.
 3. Generate a track-specific draft using only active Evidence Claims.
-4. Attach Evidence Claim IDs to every factual prose field.
+4. Attach Evidence Claim IDs to every generated factual prose field and
+   `profile_ref` pointers to structured copied fields.
 5. Run deterministic schema/reference validation.
 6. Run a separate grounding eval on a cheaper available model.
 7. Present the draft and any readiness warning to the candidate.
-8. Apply candidate edits. Factual corrections update the Candidate Profile;
-   presentation changes remain in the resume.
+8. Apply candidate edits. Presentation changes remain in the resume. Factual
+   corrections stop the run and use the same `/build-profile` reconciliation
+   path before Master Resume Build is restarted.
 9. Re-run schema and grounding evals.
 10. Promote the draft only after explicit candidate approval.
 
@@ -71,7 +76,9 @@ Promotion to `resume.yml` requires:
 
 - schema validation passes;
 - grounding eval passes;
-- every factual prose field references active Candidate Profile evidence;
+- generated prose references active Candidate Profile evidence;
+- structured identity, company, role, date, education, and skill fields
+  exactly match valid `profile_ref` targets;
 - no pending, rejected, or superseded claim is used;
 - Track Readiness was acknowledged;
 - the candidate explicitly approves the content.
