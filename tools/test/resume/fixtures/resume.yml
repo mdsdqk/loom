@@ -1,0 +1,59 @@
+metadata:
+  name: Alex Example
+  headline: Senior Software Engineer · Platform Engineering
+  location: Example City, Country
+  phone: "+1 555 000 1234"
+  email: alex@example.com
+  email_display: gmail/alexexample
+  linkedin: linkedin.com/in/alexexample
+  linkedin_display: linkedin/alexexample
+  github: github.com/alexexample
+  github_display: github/alexexample
+  site: example.com
+  site_display: www/example
+  relocation: Open to relocation
+
+summary: |
+  Software Engineer with 15+ years of experience building configurable
+  enterprise platforms across fintech.
+
+experience:
+  - company: Example Fintech
+    product: Lending Platform
+    roles:
+      - Senior Software Engineer
+    dates: November 2025 – Present
+    technologies:
+      - Angular
+      - Node.js
+    location: Example City
+    introduction: |
+      Technical lead for a platform team.
+    bullets:
+      - Designed a no-code workflow platform used across 50+ clients.
+      - Reduced implementation time by 25% through reusable components.
+
+skills:
+  - name: Languages
+    items:
+      - TypeScript
+      - Python
+
+projects:
+  - name: Example Project
+    subtitle: Headless CMS
+    live: https://example.com
+    repo: https://github.com/example/project
+    technologies:
+      - React
+      - Convex
+    bullets:
+      - Built an AI-native financial platform.
+
+education:
+  - institution: Example University
+    degree: B.Tech, Computer Science
+    dates: 2011 - 2015
+
+recognition:
+  - Winner of an internal hackathon.

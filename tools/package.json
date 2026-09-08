@@ -5,22 +5,32 @@
   "type": "module",
   "bin": {
     "pdf-parser": "dist/pdf-parser-cli.js",
-    "csv-parser": "dist/csv-parser-cli.js"
+    "csv-parser": "dist/csv-parser-cli.js",
+    "create-opportunity": "dist/create-opportunity-cli.js",
+    "build-resume": "dist/build-resume-cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/copy-resume-assets.mjs",
     "pdf-parser": "tsx src/pdf-parser-cli.ts",
     "csv-parser": "tsx src/csv-parser-cli.ts",
+    "create-opportunity": "tsx src/create-opportunity-cli.ts",
+    "build-resume": "tsx src/build-resume-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },
   "dependencies": {
+    "commander": "^15.0.0",
+    "js-yaml": "^4.1.0",
+    "nunjucks": "^3.2.4",
     "pdfjs-dist": "^4.9.155",
-    "xlsx": "^0.18.5",
-    "js-yaml": "^4.1.0"
+    "playwright": "^1.62.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.7.2"
+    "@types/node": "^24.7.2",
+    "@types/nunjucks": "^3.2.6",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   }
 }

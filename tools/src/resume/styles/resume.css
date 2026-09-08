@@ -1,0 +1,189 @@
+@page {
+  size: A4;
+  margin: 8mm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --accent-blue: #1b5fa8;
+  --ink: #1a1a1a;
+  --muted: #333;
+}
+
+body {
+  font-family: Calibri, Candara, "Segoe UI", Optima, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.25;
+  color: var(--ink);
+  margin: 0;
+  padding: 2mm 6mm;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+.header {
+  margin-bottom: 4pt;
+}
+
+.name {
+  font-size: 22pt;
+  font-weight: 700;
+  margin: 0 0 3pt 0;
+}
+
+.headline {
+  font-size: 10.5pt;
+  margin: 0 0 2pt 0;
+  color: var(--muted);
+}
+
+.contact {
+  font-size: 9.8pt;
+  color: var(--muted);
+  margin: 0 0 2pt 0;
+}
+
+.relocation {
+  font-size: 9.8pt;
+  font-style: italic;
+  color: var(--muted);
+  margin: 0;
+}
+
+.divider {
+  border: none;
+  border-top: 0.75pt solid #bbb;
+  margin: 6pt 0 8pt 0;
+}
+
+.summary-section {
+  margin-top: 0;
+}
+
+.summary {
+  margin: 0;
+  text-align: justify;
+}
+
+.section {
+  margin-top: 12pt;
+}
+
+.projects-section,
+.recognition-section {
+  break-inside: avoid-page;
+}
+
+.projects-section {
+  margin-top: 2rem;
+}
+
+.section-title {
+  font-size: 11.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3pt;
+  color: var(--accent-blue);
+  margin: 0 0 5pt 0;
+}
+
+.experience-entry,
+.project-entry {
+  margin-bottom: 7pt;
+  break-inside: avoid-page;
+}
+
+.experience-entry:last-child,
+.project-entry:last-child {
+  margin-bottom: 0;
+}
+
+.entry-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8pt;
+}
+
+.entry-title {
+  font-weight: 700;
+}
+
+.entry-subtitle {
+  font-weight: 400;
+  font-style: italic;
+}
+
+.entry-role {
+  font-weight: 700;
+  color: var(--accent-blue);
+}
+
+/* .entry-role > :not(:first-child) {
+  color: var(--muted);
+  opacity: 0.7;
+} */
+
+p.entry-role {
+  margin: 0 0 4pt 0;
+}
+
+.entry-side {
+  flex: 0 0 auto;
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.entry-tech {
+  margin: 0 0 3pt 0;
+}
+
+.entry-intro {
+  margin: 2pt 0 3pt 0;
+  text-align: justify;
+}
+
+.bullets {
+  margin: 3pt 0 0 0;
+  padding-left: 15pt;
+}
+
+.bullets li {
+  margin-bottom: 2pt;
+  text-align: justify;
+}
+
+.bullets li:last-child {
+  margin-bottom: 0;
+}
+
+.skill-groups {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.skill-group {
+  margin-bottom: 2pt;
+}
+
+.skill-group:last-child {
+  margin-bottom: 0;
+}
+
+.muted {
+  opacity: 0.7;
+}
+
+.font-normal {
+  font-weight: 500;
+  color: var(--muted);
+}

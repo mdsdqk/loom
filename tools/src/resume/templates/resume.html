@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ metadata.name }}</title>
+  </head>
+  <body>
+    <header class="header">
+      <h1 class="name">{{ metadata.name }}</h1>
+      <p class="headline">{{ metadata.headline }}</p>
+      <p class="contact">{{ contactLine(metadata) | safe }}</p>
+      {% if metadata.relocation %}<p class="relocation muted">{{ metadata.relocation }}</p>{% endif %}
+    </header>
+    <hr class="divider" />
+
+    <section class="section summary-section">
+      <p class="summary">{{ mdBold(summary) | safe }}</p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">Work Experience</h2>
+      {% for job in experience %}
+      <article class="experience-entry">
+        <div class="entry-row">
+          <span class="entry-title">{{ job.company }}{% if job.product %}<span class="muted"> · {{ job.product }}</span>{% endif %}</span>
+          <span class="entry-side">{{ job.dates }}</span>
+        </div>
+        <div class="entry-row">
+          <span class="entry-role">{{ job.roles | join(" · ") }}{% if job.technologies.length %}<span class="muted font-normal"> · {{ job.technologies | join(", ") }}</span>{% endif %}</span>
+          {% if job.location %}<span class="entry-side">{{ job.location }}</span>{% endif %}
+        </div>
+        {% if job.introduction %}<p class="entry-intro">{{ mdBold(job.introduction) | safe }}</p>{% endif %}
+        {% if job.bullets.length %}
+        <ul class="bullets">
+          {% for bullet in job.bullets %}<li>{{ mdBold(bullet) | safe }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </section>
+
+    {% if skills.length %}
+    <section class="section">
+      <h2 class="section-title">Skills</h2>
+      <ul class="skill-groups">
+        {% for group in skills %}
+        <li class="skill-group"><strong>{{ group.name }}:</strong> {{ group.items | join(", ") }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if education.length %}
+    <section class="section">
+      <h2 class="section-title">Education</h2>
+      {% for edu in education %}
+      <div class="entry-row">
+        <span class="entry-title">{{ edu.institution }}</span>
+        <span class="entry-side">{{ edu.dates }}</span>
+      </div>
+      <p class="entry-role">{{ edu.degree }}</p>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if projects.length %}
+    <section class="section projects-section">
+      <h2 class="section-title">Projects</h2>
+      {% for project in projects %}
+      <article class="project-entry">
+        <div class="entry-row">
+          <span class="entry-title">{{ project.name }}{% if project.subtitle %} · <span class="entry-subtitle">{{ project.subtitle }}</span>{% endif %}</span>
+          {% if project.live or project.repo %}<span class="entry-side">{% if project.live %}<a href="{{ project.live }}">Live</a>{% endif %}{% if project.live and project.repo %} · {% endif %}{% if project.repo %}<a href="{{ project.repo }}">Repo</a>{% endif %}</span>{% endif %}
+        </div>
+        {% if project.technologies.length %}<p class="entry-tech">{{ project.technologies | join(", ") }}</p>{% endif %}
+        {% if project.bullets.length %}
+        <ul class="bullets">
+          {% for bullet in project.bullets %}<li>{{ mdBold(bullet) | safe }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if recognition.length %}
+    <section class="section recognition-section">
+      <h2 class="section-title">Recognition &amp; Highlights</h2>
+      <ul class="bullets">
+        {% for item in recognition %}<li>{{ mdBold(item) | safe }}</li>{% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+  </body>
+</html>
