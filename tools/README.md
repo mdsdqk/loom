@@ -396,24 +396,51 @@ first. Each tier exists to make the next affordable.
 ```sh
 pnpm network-match --families engineering --min-level mid --max-level lead
 pnpm network-match --min-score 0.1 --referral-weight 0.5 --top 100
+pnpm network-match --max-age 60           # drop postings older than 60 days
 pnpm network-match --no-enrich            # skip the description fetch
+pnpm network-match --enrich-limit 500     # cap descriptions fetched this run
 pnpm network-match -e path/to/export      # also calibrate against saved jobs
 ```
+
+| flag | meaning |
+|---|---|
+| `--families <list>` | disciplines to keep: engineering, data, product, design, finance, legal, sales, marketing, people, operations, support, research, medical, trades |
+| `--min-level` / `--max-level` | seniority window: intern, junior, mid, senior, lead, executive |
+| `--max-age <days>` | drop postings older than this, where the provider dates them |
+| `--min-score <0-1>` | drop jobs scoring below this, once they have a description |
+| `--referral-weight <0-1>` | how much who-you-know counts; 0 ranks purely on fit |
+| `--top <n>` | how many matches to write (default 200) |
+| `--enrich-limit <n>` | cap on descriptions fetched in one run (default 400) |
+| `--concurrency <n>` | in-flight HTTP requests during enrichment |
+| `-e, --export <dir>` | also calibrate against the jobs you saved |
+
+An unrecognised level or discipline **fails immediately** with the valid
+options. Silently treating a typo as a filter produced an empty shortlist and
+no error, which is the worst way for this to go wrong.
 
 Measured over a real corpus of 16,439 jobs:
 
 ```text
 collapse duplicate postings  12,939   one role listed per city becomes one row
-structural                    2,065   level window, location, employment type, freshness
-discipline                    1,357   job family from the title
-                                      -> 1,357 descriptions to fetch, not 16,439
+structural                    2,085   level window, location, employment type, freshness
+discipline                    1,413   job family from the title
+                                      -> 1,413 descriptions to fetch, not 16,439
 ```
+
+A collapsed row carries **every** city its postings named and every apply link,
+so a role open in several places is judged on all of them. Judging it on one
+arbitrary city silently discarded roles that were open where the candidate
+actually wanted to work.
 
 **Tier 2.5 is the expensive one and everything above it exists to shrink it.**
 Workday's list endpoint returns no description, so its postings need a detail
 request each — running that before the cheap tiers would mean ten thousand
 requests instead of a few hundred. Fetched text is appended to the sidecar, so
 it is paid for once across runs.
+
+When `--enrich-limit` cannot cover everything, the budget goes to confirmed
+disciplines at the companies the candidate has the most pull at, rather than to
+whichever job id happened to sort first.
 
 Scoring is a weighted overlap between the posting and the candidate's own
 words — the skills they listed, the titles they have held, the vocabulary of
