@@ -144,12 +144,21 @@ describe("ashby", () => {
             jobUrl: "https://jobs.ashbyhq.com/exampleco/job-1",
             publishedAt: "2026-07-01T00:00:00Z",
             compensation: {
-              scrapeableCompensationSalarySummary: {
-                minValue: 90000,
-                maxValue: 120000,
-                currencyCode: "GBP",
-                interval: "YEAR",
-              },
+              scrapeableCompensationSalarySummary: "£90K - £120K",
+              compensationTiers: [
+                {
+                  components: [
+                    { compensationType: "EquityPercentage", minValue: null, maxValue: null },
+                    {
+                      compensationType: "Salary",
+                      minValue: 90000,
+                      maxValue: 120000,
+                      currencyCode: "GBP",
+                      interval: "1 YEAR",
+                    },
+                  ],
+                },
+              ],
             },
           },
         ],
@@ -432,5 +441,68 @@ describe("greenhouse location fields", () => {
     );
 
     expect(page.jobs[0].locations).toEqual(["London"]);
+  });
+});
+
+describe("ashby compensation", () => {
+  // The summary field is a display string, not a structured range — reading it
+  // as an object yielded zero compensation across every Ashby job.
+  it("ignores the display summary and reads the salary component", () => {
+    const page = ashby.normalize(
+      {
+        jobs: [
+          {
+            id: "j1",
+            title: "Engineer",
+            compensation: {
+              scrapeableCompensationSalarySummary: "$211.4K - $290.6K",
+              compensationTiers: [
+                {
+                  components: [
+                    { compensationType: "EquityPercentage", minValue: null, maxValue: null },
+                    {
+                      compensationType: "Salary",
+                      minValue: 211400,
+                      maxValue: 290600,
+                      currencyCode: "USD",
+                      interval: "1 YEAR",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
+      { id: "b" }
+    );
+
+    expect(page.jobs[0].compensation).toEqual({
+      min: 211400,
+      max: 290600,
+      currency: "USD",
+      interval: "1 YEAR",
+    });
+  });
+
+  it("reports no compensation when only equity is listed", () => {
+    const page = ashby.normalize(
+      {
+        jobs: [
+          {
+            id: "j1",
+            title: "Engineer",
+            compensation: {
+              compensationTiers: [
+                { components: [{ compensationType: "EquityPercentage", minValue: null }] },
+              ],
+            },
+          },
+        ],
+      },
+      { id: "b" }
+    );
+
+    expect(page.jobs[0].compensation).toBeUndefined();
   });
 });

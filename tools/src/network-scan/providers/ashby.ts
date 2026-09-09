@@ -38,8 +38,18 @@ export const ashby: ProviderAdapter = {
       const secondary = asArray(job.secondaryLocations)
         .map((entryValue) => asString(asRecord(entryValue).location))
         .filter((value): value is string => Boolean(value));
-      const compensation = asRecord(job.compensation);
-      const range = asRecord(asRecord(compensation.scrapeableCompensationSalarySummary));
+      // `scrapeableCompensationSalarySummary` is a display *string*
+      // ("$211.4K - $290.6K"); the numbers live in the salary component of a
+      // compensation tier. Reading the summary as an object silently produced
+      // no compensation at all for every Ashby job.
+      const salary = asArray(asRecord(job.compensation).compensationTiers)
+        .flatMap((tier) => asArray(asRecord(tier).components))
+        .map(asRecord)
+        .find(
+          (component) =>
+            component.compensationType === "Salary" &&
+            (typeof component.minValue === "number" || typeof component.maxValue === "number")
+        );
 
       return {
         providerJobId: asString(job.id),
@@ -53,12 +63,12 @@ export const ashby: ProviderAdapter = {
         updatedAt: asString(job.updatedAt),
         jobUrl: asString(job.jobUrl),
         applyUrl: asString(job.applyUrl) ?? asString(job.jobUrl),
-        compensation: range.minValue || range.maxValue
+        compensation: salary
           ? {
-              min: typeof range.minValue === "number" ? range.minValue : undefined,
-              max: typeof range.maxValue === "number" ? range.maxValue : undefined,
-              currency: asString(range.currencyCode),
-              interval: asString(range.interval),
+              min: typeof salary.minValue === "number" ? salary.minValue : undefined,
+              max: typeof salary.maxValue === "number" ? salary.maxValue : undefined,
+              currency: asString(salary.currencyCode),
+              interval: asString(salary.interval),
             }
           : undefined,
       };
