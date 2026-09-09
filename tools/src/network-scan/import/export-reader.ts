@@ -47,6 +47,7 @@ export const EXPORT_FILES = {
   companyFollows: { path: "Company Follows.csv", column: "Organization" },
   positions: { path: "Positions.csv", column: "Company Name" },
   education: { path: "Education.csv", column: "School Name" },
+  skills: { path: "Skills.csv", column: "Name" },
   savedJobs: { path: join("Jobs", "Saved Jobs.csv"), column: "Company Name" },
   jobPreferences: { path: join("Jobs", "Job Seeker Preferences.csv"), column: "Job Titles" },
 } as const;

@@ -234,6 +234,9 @@ describe("buildNetworkImport", () => {
       saved_jobs: 3,
     });
     expect(first.missing_files).toEqual([]);
+    // The candidate's own skills feed the matcher, so the import must carry them.
+    expect(first.skills.listed).toContain("TypeScript");
+    expect(first.skills.held_titles).toContain("Senior Software Engineer");
     expect(first.companies[0].id).toBe("northwind-traders");
     expect(first.preferences.titles).toContain("Full Stack Engineer");
   });

@@ -12,7 +12,8 @@
     "network-domains": "dist/network-scan/domains-cli.js",
     "network-discover": "dist/network-scan/discover-cli.js",
     "network-jobs": "dist/network-scan/jobs-cli.js",
-    "network-report": "dist/network-scan/report-cli.js"
+    "network-report": "dist/network-scan/report-cli.js",
+    "network-match": "dist/network-scan/match-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-resume-assets.mjs",
@@ -25,6 +26,7 @@
     "network-discover": "tsx src/network-scan/discover-cli.ts",
     "network-jobs": "tsx src/network-scan/jobs-cli.ts",
     "network-report": "tsx src/network-scan/report-cli.ts",
+    "network-match": "tsx src/network-scan/match-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },

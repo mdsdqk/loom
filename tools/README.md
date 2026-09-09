@@ -239,6 +239,7 @@ LinkedIn export dir
   → network-domains   → domains.yml         (verified corporate domains)
   → network-discover  → hiring-sources.yml  (careers page + applicant-tracking system)
   → network-jobs      → jobs.yml            (open jobs, normalized and deduplicated)
+  → network-match     → matches.yml         (filtered and ranked against the candidate)
   → network-report    → report.md           (funnel + referral leverage)
 ```
 
@@ -386,6 +387,74 @@ companies they follow, former employers and alma maters.
 The funnel is the point of the breadth-first design. Without it, "jobs found at
 300 of 649 companies" is a shrug; with it, the next worthwhile improvement is
 obvious.
+
+### `network-match`
+
+Filters and ranks the scanned jobs against the candidate, cheapest checks
+first. Each tier exists to make the next affordable.
+
+```sh
+pnpm network-match --families engineering --min-level mid --max-level lead
+pnpm network-match --min-score 0.1 --referral-weight 0.5 --top 100
+pnpm network-match --no-enrich            # skip the description fetch
+pnpm network-match -e path/to/export      # also calibrate against saved jobs
+```
+
+Measured over a real corpus of 16,439 jobs:
+
+```text
+collapse duplicate postings  12,939   one role listed per city becomes one row
+structural                    2,065   level window, location, employment type, freshness
+discipline                    1,357   job family from the title
+                                      -> 1,357 descriptions to fetch, not 16,439
+```
+
+**Tier 2.5 is the expensive one and everything above it exists to shrink it.**
+Workday's list endpoint returns no description, so its postings need a detail
+request each — running that before the cheap tiers would mean ten thousand
+requests instead of a few hundred. Fetched text is appended to the sidecar, so
+it is paid for once across runs.
+
+Scoring is a weighted overlap between the posting and the candidate's own
+words — the skills they listed, the titles they have held, the vocabulary of
+their own role descriptions — and every matched term is reported. Terms match
+whole, so `Java` is not found inside `JavaScript`.
+
+Ranking combines fit with **referral leverage**, because the point is a
+referral rather than a job listing: a decent match where a former colleague is
+senior beats a better match where the only contact is one junior connection.
+Both halves stay visible in the output. A title the taxonomy could not place
+stays in the list but ranks below one whose discipline is established.
+
+`--min-score` never drops a job that has no description yet: a job cannot be
+rejected for a score it had no chance to earn.
+
+### Calibrating the matcher
+
+Thresholds are measured, not chosen. The LinkedIn export contains the jobs the
+candidate saved themselves — real labels produced before any of this existed —
+and `-e/--export` runs the funnel against them, reporting every saved job it
+would have discarded and why.
+
+It earns its place: it has already caught two bugs in itself and one real gap
+in the matcher (boards write `India, Bangalore` where the candidate wrote
+`Bengaluru`). The labels are positive-only and few, so it can show the matcher
+is too aggressive but cannot show it is precise — the summary says so every
+time it runs.
+
+### Asking a model
+
+`matching/review.ts` builds batches and validates the answers; it does **not**
+call a model. Loom runs on the host's model access, and every other stage is
+deterministic code that runs offline, so the boundary sits here — the same
+split the repo already uses between grounding evaluation and the agent that
+performs it.
+
+Two questions go out separately: `discipline`, for titles the taxonomy could
+not place, which needs only the title; and `fit`, for jobs that survived
+everything else, which needs the description. Answers are reconciled against
+what was asked, so a model that drops items or invents ids cannot quietly
+corrupt the shortlist.
 
 ### Adding a provider
 

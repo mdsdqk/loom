@@ -1,4 +1,9 @@
-import type { CandidatePreferences, CompanySignals, SeniorityBand } from "../schema.js";
+import type {
+  CandidatePreferences,
+  CandidateSkills,
+  CompanySignals,
+  SeniorityBand,
+} from "../schema.js";
 import { normalizationKey } from "./connections.js";
 import type { CompanyGroup } from "./connections.js";
 import type { ExportRow } from "./export-reader.js";
@@ -109,4 +114,64 @@ export function buildSignals(groups: CompanyGroup[], sources: SignalSources): Bu
     followedTotal: followed.size,
     savedJobsOutsideNetwork,
   };
+}
+
+/**
+ * Words too common in job and profile text to distinguish anything. Matching on
+ * them would score every job against every candidate.
+ */
+const STOPWORDS = new Set([
+  "and", "the", "for", "with", "our", "you", "your", "are", "will", "team", "work", "working",
+  "experience", "years", "role", "job", "position", "company", "business", "new", "using", "use",
+  "including", "across", "within", "strong", "good", "great", "ability", "skills", "knowledge",
+  "development", "developing", "build", "building", "built", "help", "support", "ensure", "manage",
+  "based", "well", "have", "has", "been", "this", "that", "from", "into", "other", "more", "who",
+  "what", "when", "how", "all", "any", "can", "not", "was", "were", "they", "them", "their",
+]);
+
+/** Splits free text into distinctive lowercase terms. */
+function termsFrom(text: string): string[] {
+  return (text ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    // Keep the punctuation that carries meaning in technology names.
+    .replace(/[^a-z0-9+#./ -]+/g, " ")
+    .split(/[\s,/]+/)
+    .map((term) => term.replace(/^[-.]+|[-.]+$/g, ""))
+    .filter((term) => term.length > 2 && term.length < 32 && !STOPWORDS.has(term));
+}
+
+/**
+ * Assembles what the candidate can do from their own export.
+ *
+ * Skills exactly as they listed them, the titles they have held, and the
+ * distinctive vocabulary of their own role descriptions. A term has to appear
+ * more than once in the experience text to count, which keeps one-off words out
+ * of the profile without needing a judgement about which ones matter.
+ */
+export function buildSkills(sources: {
+  skills?: ExportRow[];
+  positions?: ExportRow[];
+}): CandidateSkills {
+  const listed = [...new Set((sources.skills ?? []).map((row) => (row["Name"] ?? "").trim()))]
+    .filter(Boolean)
+    .sort();
+
+  const heldTitles = [...new Set((sources.positions ?? []).map((row) => (row["Title"] ?? "").trim()))]
+    .filter(Boolean)
+    .sort();
+
+  const counts = new Map<string, number>();
+  for (const row of sources.positions ?? []) {
+    for (const term of termsFrom(`${row["Description"] ?? ""} ${row["Title"] ?? ""}`)) {
+      counts.set(term, (counts.get(term) ?? 0) + 1);
+    }
+  }
+  const experienceTerms = [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([term]) => term)
+    .sort();
+
+  return { listed, held_titles: heldTitles, experience_terms: experienceTerms };
 }

@@ -81,6 +81,22 @@ export const CandidatePreferencesSchema = z.object({
  * identically. Surfaced for a human to look at rather than merged silently —
  * merging on fuzzy similarity alone is how distinct employers get conflated.
  */
+/**
+ * What the candidate can do, taken verbatim from their own export.
+ *
+ * Skills as they listed them, plus the vocabulary of the roles they actually
+ * held. Nothing here is inferred — it is the candidate's own words, which is
+ * what makes keyword matching against it defensible rather than a guess.
+ */
+export const CandidateSkillsSchema = z.object({
+  /** Skills the candidate listed on their profile. */
+  listed: z.array(z.string()).default([]),
+  /** Titles the candidate has actually held. */
+  held_titles: z.array(z.string()).default([]),
+  /** Distinct terms drawn from their own role descriptions. */
+  experience_terms: z.array(z.string()).default([]),
+});
+
 export const MergeReviewSchema = z.object({
   a: z.string().min(1),
   b: z.string().min(1),
@@ -103,6 +119,7 @@ export const NetworkImportSchema = z.object({
   imported_at: z.string().min(1),
   counts: ImportCountsSchema,
   preferences: CandidatePreferencesSchema,
+  skills: CandidateSkillsSchema.default({ listed: [], held_titles: [], experience_terms: [] }),
   companies: z.array(CompanySchema).default([]),
   review: z.array(MergeReviewSchema).default([]),
   /** Files the importer expected but did not find, by basename. */
@@ -296,6 +313,7 @@ export type Connection = z.infer<typeof ConnectionSchema>;
 export type CompanySignals = z.infer<typeof CompanySignalsSchema>;
 export type Company = z.infer<typeof CompanySchema>;
 export type CandidatePreferences = z.infer<typeof CandidatePreferencesSchema>;
+export type CandidateSkills = z.infer<typeof CandidateSkillsSchema>;
 export type MergeReview = z.infer<typeof MergeReviewSchema>;
 export type ImportCounts = z.infer<typeof ImportCountsSchema>;
 export type NetworkImport = z.infer<typeof NetworkImportSchema>;
