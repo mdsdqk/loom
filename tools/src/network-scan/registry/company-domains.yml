@@ -1,0 +1,844 @@
+# Verified company -> corporate domain mappings, reused across scans.
+# Company keys are normalized names (lowercase, legal suffixes stripped).
+# Hand-edited entries take priority over anything the scanner discovers.
+companies:
+  - company: 5paisa
+    domain: 5paisa.com
+  - company: 91social
+    domain: 91social.com
+  - company: abbott
+    domain: abbott.com
+  - company: accenture
+    domain: accenture.com
+  - company: access infinity
+    domain: accessinfinity.com
+  - company: accolite digital
+    domain: accolitedigital.in
+  - company: acko
+    domain: acko.com
+  - company: acm
+    domain: acm.com
+  - company: activate
+    domain: activate.com
+  - company: adani group
+    domain: adani.com
+  - company: aditya enterprises
+    domain: aditya.in
+  - company: admissions abroad
+    domain: admissionsabroad.in
+  - company: adobe
+    domain: adobe.com
+  - company: advaya platform
+    domain: advayaplatform.com
+  - company: ai dea labs
+    domain: aidealabs.com
+  - company: airbnb
+    domain: airbnb.com
+  - company: airbus
+    domain: airbus.com
+  - company: aishala
+    domain: aishala.in
+  - company: algoquant
+    domain: algoquantfin.com
+  - company: amadeus
+    domain: amadeus.com
+  - company: amazon
+    domain: amazon.com
+  - company: amazon web services
+    domain: aws.amazon.com
+  - company: analytics wallah
+    domain: analyticswallah.com
+  - company: anthropic
+    domain: anthropic.com
+  - company: anz
+    domain: anz.com.au
+  - company: anzy global
+    domain: anzyglobal.com
+  - company: apex systems
+    domain: apexsystems.com
+  - company: apple
+    domain: apple.com
+  - company: aqm technologies
+    domain: aqmtechnologies.com
+  - company: arcesium
+    domain: arcesium.com
+  - company: arctic intelligence
+    domain: arctic-intelligence.com
+  - company: arctic wolf
+    domain: arcticwolf.com
+  - company: are wireless
+    domain: arewireless.com
+  - company: arm
+    domain: arm.com
+  - company: aruba
+    domain: aruba.com
+  - company: ascendion
+    domain: ascendion.com
+  - company: asiafinance group
+    domain: asiafinancegroup.com
+  - company: asml
+    domain: asml.com
+  - company: at t
+    domain: att.com
+  - company: athenahealth
+    domain: athenahealth.com
+  - company: atlas primary
+    domain: atlasprimary.io
+  - company: atsg
+    domain: atsg.com
+  - company: aumovio
+    domain: aumovio.com
+  - company: autarky
+    domain: autarky.com
+  - company: autism ontario
+    domain: autismontario.com
+  - company: avashyam
+    domain: avashyam.com
+  - company: aziro
+    domain: aziro.com
+  - company: bajaj finserv health
+    domain: bajajfinservhealth.in
+  - company: baxter international
+    domain: baxterinternational.in
+  - company: beanbag
+    domain: beanbag.com
+  - company: betterplace
+    domain: betterplace.com
+  - company: biotronik
+    domain: biotronik.com
+  - company: blitz
+    domain: blitz.com
+  - company: bny
+    domain: bny.com
+  - company: boeing
+    domain: boeing.com
+  - company: booking holdings
+    domain: bookingholdings.com
+  - company: boomi
+    domain: boomi.com
+  - company: born
+    domain: born.com
+  - company: bossworks
+    domain: bossworks.ai
+  - company: box
+    domain: box.com
+  - company: brandneeds
+    domain: brandneeds.in
+  - company: bread financial
+    domain: breadfinancial.com
+  - company: broadcom software
+    domain: broadcom.com
+  - company: brown university
+    domain: brown.edu
+  - company: browserstack
+    domain: browserstack.com
+  - company: bt group
+    domain: bt.com
+  - company: businessowner
+    domain: businessowner.com
+  - company: cadence
+    domain: cadence.com
+  - company: cai software
+    domain: cai.com
+  - company: capgemini
+    domain: capgemini.com
+  - company: capgemini engineering
+    domain: capgemini-engineering.com
+  - company: caterpillar
+    domain: caterpillar.com
+  - company: centipair technologies
+    domain: centipair.com
+  - company: chegg
+    domain: chegg.com
+  - company: chubb
+    domain: chubb.com
+  - company: cisco
+    domain: cisco.com
+  - company: citi
+    domain: citi.com
+  - company: citiustech
+    domain: citiustech.com
+  - company: citrix
+    domain: citrix.com
+  - company: clairlabs
+    domain: clairlabs.io
+  - company: clayfin
+    domain: clayfin.ai
+  - company: cloud collab technologies
+    domain: cloudcollabtechnologies.com
+  - company: codacy
+    domain: codacy.com
+  - company: cognite
+    domain: cognite.com
+  - company: coinswitch
+    domain: coinswitch.co
+  - company: collins aerospace
+    domain: collinsaerospace.com
+  - company: colt technology services
+    domain: colt.com
+  - company: computomic
+    domain: computomic.ai
+  - company: comviva
+    domain: comviva.com
+  - company: confidential
+    domain: confidential.ai
+  - company: confluent
+    domain: confluent.io
+  - company: connectfarmer
+    domain: connectfarmer.com
+  - company: couchbase
+    domain: couchbase.com
+  - company: covalensedigital
+    domain: covalensedigital.com
+  - company: d matrix
+    domain: dmatrix.com
+  - company: daimler truck
+    domain: daimlertruck.com
+  - company: damodar it solutions
+    domain: damodaritsolutions.com
+  - company: data sutram
+    domain: datasutram.ai
+  - company: delightree
+    domain: delightree.com
+  - company: dell technologies
+    domain: dell.com
+  - company: deloitte
+    domain: deloitte.com
+  - company: deloitte consulting
+    domain: deloitte.com
+  - company: dentsu global services
+    domain: dentsu.com
+  - company: deutsche telekom
+    domain: telekom.com
+  - company: digamber finance
+    domain: digamberfinance.com
+  - company: digital cfo
+    domain: digitalcfo.in
+  - company: dp world
+    domain: dpworld.com
+  - company: draft42
+    domain: draft42.com
+  - company: draiven
+    domain: draiven.io
+  - company: draup
+    domain: draup.com
+  - company: dtc infotech
+    domain: dtcinfotech.com
+  - company: dyota labs
+    domain: dyota.com
+  - company: ebay
+    domain: export.ebay.com
+  - company: edureka
+    domain: edureka.com
+  - company: elisyan india
+    domain: elisyan.in
+  - company: elite lifestyle
+    domain: elitelifestyle.in
+  - company: engramiq
+    domain: engramiq.com
+  - company: ensono
+    domain: ensono.com
+  - company: envoy global
+    domain: envoyglobal.com
+  - company: epicor
+    domain: epicor.com
+  - company: ericsson
+    domain: ericsson.com
+  - company: esg sentinel
+    domain: esgsentinel.com
+  - company: ethos
+    domain: ethos.com
+  - company: euclid innovations
+    domain: euclidinnovations.com
+  - company: evfin
+    domain: evfin.co
+  - company: expedia group
+    domain: expediagroup.com
+  - company: experian
+    domain: experian.com
+  - company: ey
+    domain: ey.com
+  - company: f f designs
+    domain: freefrog.com
+  - company: fanatics
+    domain: fanatics.in
+  - company: fev india
+    domain: fev.com
+  - company: finflux
+    domain: m2pfintech.com
+  - company: fletchers group
+    domain: fletchers.com
+  - company: flexera
+    domain: flexera.com
+  - company: flooid in
+    domain: flooid.in
+  - company: fluence india
+    domain: fluenceindia.com
+  - company: formic ai
+    domain: formicai.co
+  - company: foundrfindr
+    domain: foundrfindr.com
+  - company: fourkites
+    domain: fourkites.ai
+  - company: freo
+    domain: freo.io
+  - company: future links
+    domain: futurelinks.com
+  - company: futurestrive
+    domain: futurestrive.com
+  - company: gain
+    domain: gain.io
+  - company: genesis global
+    domain: genesisglobal.com
+  - company: genpact
+    domain: genpact.com
+  - company: glean
+    domain: glean.com
+  - company: globallogic
+    domain: globallogic.com
+  - company: goldman sachs
+    domain: goldmansachs.com
+  - company: google
+    domain: google.com
+  - company: griphic
+    domain: griphic.com
+  - company: guidewire software
+    domain: guidewire.com
+  - company: gushwork
+    domain: gushwork.ai
+  - company: hdfc life
+    domain: hdfclife.com
+  - company: headout
+    domain: headout.com
+  - company: hewlett packard enterprise
+    domain: hpe.com
+  - company: highlevel
+    domain: gohighlevel.com
+  - company: hitachi energy
+    domain: hitachienergy.com
+  - company: hp
+    domain: hp.com
+  - company: htc global services
+    domain: htcinc.com
+  - company: human for human
+    domain: humanforhuman.co
+  - company: hungerbox
+    domain: hungerbox.ai
+  - company: huntingcube
+    domain: huntingcube.ai
+  - company: huron
+    domain: huron.com
+  - company: hyperverge
+    domain: hyperverge.in
+  - company: i giants
+    domain: i-giants.com
+  - company: ibm
+    domain: ibm.com
+  - company: icam solution
+    domain: icam.com
+  - company: idfc first bank
+    domain: idfcfirst.bank.in
+  - company: ig group
+    domain: iggroup.ai
+  - company: iinvsys
+    domain: iinvsys.com
+  - company: iksha labs
+    domain: ikshalabs.com
+  - company: imc trading
+    domain: imc.com
+  - company: infineon technologies
+    domain: infineon.com
+  - company: info services
+    domain: infoservices.com
+  - company: inmobi
+    domain: inmobi.com
+  - company: inspire
+    domain: inspire.com
+  - company: intapp
+    domain: intapp.com
+  - company: intel
+    domain: intel.com
+  - company: internshala
+    domain: internshala.com
+  - company: intuit
+    domain: intuit.com
+  - company: ipmetrix consulting group
+    domain: ipmetrix.com
+  - company: ipserlab
+    domain: ipserlab.com
+  - company: iqvia
+    domain: iqvia.com
+  - company: itc infotech
+    domain: itcinfotech.com
+  - company: jai kisan
+    domain: jaikisan.in
+  - company: jain
+    domain: jain.com
+  - company: jilo health
+    domain: jilohealth.com
+  - company: jlr
+    domain: jlr.com
+  - company: jpmorgan chase
+    domain: jpmorganchase.com
+  - company: jpmorganchase
+    domain: jpmorganchase.com
+  - company: karessa candles
+    domain: karessacandles.com
+  - company: kickdrum
+    domain: kickdrum.com
+  - company: kjbn labs
+    domain: kjbnlabs.in
+  - company: kla
+    domain: kla.com
+  - company: klick
+    domain: klick.com
+  - company: knight fintech
+    domain: knightfintech.com
+  - company: kognitos
+    domain: kognitos.com
+  - company: korn ferry
+    domain: kornferry.com
+  - company: kotak mahindra bank
+    domain: kotak.bank.in
+  - company: kpmg global services
+    domain: kpmgglobalservices.com
+  - company: kpmg india
+    domain: kpmg.com
+  - company: kpr constructions
+    domain: kprconstructions.in
+  - company: kratikal
+    domain: kratikal.com
+  - company: kreditbee
+    domain: kreditbee.in
+  - company: lendingkart
+    domain: lendingkart.com
+  - company: lentra
+    domain: lentra.ai
+  - company: let s be the change
+    domain: letsbethechange.in
+  - company: lfai academy
+    domain: lfaiacademy.com
+  - company: llmda
+    domain: llmda.ai
+  - company: lockheed martin
+    domain: lockheedmartin.com
+  - company: lokta
+    domain: lokta.ai
+  - company: lseg
+    domain: lseg.com
+  - company: lumilens
+    domain: lumilens.io
+  - company: lumos labs
+    domain: lumos.com
+  - company: luneox
+    domain: luneox.com
+  - company: m2p fintech
+    domain: m2pfintech.com
+  - company: magna international
+    domain: magna.com
+  - company: mailvio
+    domain: mailvio.com
+  - company: manipal academy of higher education
+    domain: manipal.edu
+  - company: manjushree ventures
+    domain: manjushreeventures.com
+  - company: mann hummel
+    domain: mann-hummel.com
+  - company: mavenir
+    domain: mavenir.com
+  - company: maxeom
+    domain: maxeom.com
+  - company: mbanq
+    domain: mbanq.com
+  - company: medi assist
+    domain: mediassist.in
+  - company: mentoria
+    domain: mentoria.com
+  - company: mercer
+    domain: mercer.com
+  - company: merkle
+    domain: merkle.com
+  - company: meta
+    domain: meta.com
+  - company: microsoft
+    domain: microsoft.com
+  - company: microsoft ai
+    domain: microsoft.com
+  - company: mimecast
+    domain: mimecast.com
+  - company: mobile programming
+    domain: mobileprogramming.com
+  - company: model n
+    domain: modeln.com
+  - company: mongodb
+    domain: mongodb.com
+  - company: moniepoint group
+    domain: moniepoint.com
+  - company: morgan stanley
+    domain: morganstanley.com
+  - company: motorq
+    domain: motorq.com
+  - company: mpokket
+    domain: mpokket.in
+  - company: msci
+    domain: msci.com
+  - company: msme success hq
+    domain: msmesuccesshq.com
+  - company: mulberri
+    domain: mulberri.com
+  - company: my panditg
+    domain: mypanditg.com
+  - company: mz automation
+    domain: mzautomation.in
+  - company: nagarro
+    domain: nagarro.com
+  - company: nest money
+    domain: nestmoney.in
+  - company: netapp
+    domain: netapp.com
+  - company: netenrich
+    domain: netenrich.com
+  - company: netzealous
+    domain: netzealous.com
+  - company: neurealm
+    domain: neurealm.com
+  - company: new relic
+    domain: newrelic.com
+  - company: newpage solutions
+    domain: newpage.com
+  - company: nick scali
+    domain: nickscali.com.au
+  - company: nike
+    domain: nike.in
+  - company: nomura
+    domain: nomura.com
+  - company: nooffseason com
+    domain: nooffseason.com
+  - company: nubra
+    domain: nubra.com
+  - company: nudge
+    domain: nudge.com
+  - company: nutanix
+    domain: nutanix.com
+  - company: nvidia
+    domain: nvidia.com
+  - company: nyb infotech
+    domain: nybinfotech.com
+  - company: oakland university
+    domain: oakland.edu
+  - company: oaknorth
+    domain: oaknorth.com
+  - company: okta
+    domain: okta.com
+  - company: ola
+    domain: olacare.com
+  - company: omnissa
+    domain: omnissa.com
+  - company: onefin
+    domain: onefin.com
+  - company: onsurity
+    domain: onsurity.com
+  - company: opendoor
+    domain: opendoor.com
+  - company: opentext
+    domain: opentext.com
+  - company: optum
+    domain: optum.com
+  - company: oracle
+    domain: oracle.com
+  - company: orchid
+    domain: orchid.com
+  - company: outthinkcoders
+    domain: outthinkcoders.com
+  - company: paypal
+    domain: paypal.com
+  - company: paytm
+    domain: paytm.com
+  - company: perfios
+    domain: perfios.ai
+  - company: persistent systems
+    domain: persistentsystems.com
+  - company: pes university
+    domain: pes.edu
+  - company: philips
+    domain: philips.co.in
+  - company: phonepe
+    domain: phonepe.com
+  - company: pincode
+    domain: pincode.in
+  - company: pioneer foundation engineers
+    domain: pioneerfoundationengineers.com
+  - company: planpulse
+    domain: planpulse.io
+  - company: plugseal innovation services
+    domain: plugseal.in
+  - company: pocket fm
+    domain: pocketfm.com
+  - company: pop
+    domain: pop.com
+  - company: postman
+    domain: postman.com
+  - company: powerdrift
+    domain: powerdrift.in
+  - company: pratt whitney
+    domain: prattwhitney.in
+  - company: private
+    domain: private.in
+  - company: producthood consulting
+    domain: producthood.com
+  - company: publicis sapient
+    domain: publicissapient.com
+  - company: pure storage
+    domain: everpuredata.com
+  - company: qualcomm
+    domain: qualcomm.com
+  - company: quantinuum
+    domain: quantinuum.com
+  - company: quantiphi
+    domain: quantiphi.com
+  - company: quest global
+    domain: questglobal.com
+  - company: quilr
+    domain: quilr.ai
+  - company: rafay
+    domain: rafay.com
+  - company: rakiya information technology solution
+    domain: rakiyaworld.com
+  - company: raksul india
+    domain: raksul.com
+  - company: rakuten india
+    domain: rakuten.com
+  - company: razorpay
+    domain: razorpay.com
+  - company: reach partners
+    domain: reachpartners.com
+  - company: recaro aircraft seating
+    domain: recaro-as.com
+  - company: reconlog
+    domain: reconlog.com
+  - company: recro
+    domain: recro.in
+  - company: recruit crm
+    domain: recruitcrm.io
+  - company: recruitsmart
+    domain: recruitsmart.com.au
+  - company: revspot
+    domain: revspot.in
+  - company: rewardz
+    domain: rewardz.io
+  - company: ridgeway consulting
+    domain: ridgeway.com
+  - company: rigi
+    domain: rigi.ch
+  - company: rippling
+    domain: rippling.com
+  - company: ruckus networks
+    domain: ruckusnetworks.com
+  - company: rustic wisdom
+    domain: rusticwisdom.in
+  - company: sabre
+    domain: sabre.com
+  - company: sagility
+    domain: sagility.com
+  - company: saia
+    domain: saia.io
+  - company: salesera
+    domain: salesera.com
+  - company: salesforce
+    domain: salesforce.com
+  - company: sam s club
+    domain: samsclub.com
+  - company: samsung electronics
+    domain: samsungelectronics.in
+  - company: sap
+    domain: sap.com
+  - company: scientist technologies
+    domain: scientist.com
+  - company: scrollread
+    domain: scrollread.com
+  - company: seclous
+    domain: seclous.com
+  - company: self directed
+    domain: selfdirected.com
+  - company: sereact
+    domain: sereact.ai
+  - company: sharechat
+    domain: sharechat.com
+  - company: shecommerz
+    domain: shecommerz.com
+  - company: shipbob
+    domain: shipbob.com
+  - company: siemens
+    domain: siemens.com
+  - company: siemens digital industries software
+    domain: siemens.com
+  - company: siemens energy
+    domain: siemens-energy.com
+  - company: sierra cedar
+    domain: sierracedar.net
+  - company: signzy
+    domain: signzy.com
+  - company: silana
+    domain: silana.com
+  - company: silverock technologies l l c
+    domain: silverock.com
+  - company: singsys
+    domain: singsys.com
+  - company: sisa
+    domain: sisa.ai
+  - company: sm consulting
+    domain: smconsulting.in
+  - company: smallcase
+    domain: smallcase.com
+  - company: smartsheet
+    domain: smartsheet.com
+  - company: smbc group
+    domain: smbc.com
+  - company: smytten
+    domain: smytten.com
+  - company: social sailor
+    domain: socialsailor.co
+  - company: soti
+    domain: soti.com
+  - company: spacex
+    domain: spacex.com
+  - company: springworks
+    domain: springworks.com
+  - company: standard packs
+    domain: standardpacks.com
+  - company: starboard
+    domain: starboard.co
+  - company: statiq
+    domain: statiq.in
+  - company: swiss re
+    domain: swissre.com
+  - company: symphonyai
+    domain: symphonyai.com
+  - company: synopsys
+    domain: synopsys.com
+  - company: syspro solutions
+    domain: sysprosolutions.in
+  - company: tailortech
+    domain: tailortech.in
+  - company: talentica software
+    domain: talentica.com
+  - company: tally solutions
+    domain: tallysolutions.com
+  - company: target
+    domain: target.com
+  - company: tata consultancy services
+    domain: tcs.com
+  - company: tech mahindra
+    domain: techmahindra.com
+  - company: technovative consulting
+    domain: technovative.in
+  - company: telestream
+    domain: telestream.com
+  - company: tenarai
+    domain: tenarai.com
+  - company: teragonia
+    domain: teragonia.com
+  - company: tesla
+    domain: tesla.co
+  - company: the foundery
+    domain: thefoundery.in
+  - company: the logical indian
+    domain: thelogicalindian.com
+  - company: the reliable jobs
+    domain: thereliablejobs.com
+  - company: theatre st james
+    domain: stjamestheatre.ca
+  - company: thomson reuters
+    domain: thomsonreuters.com
+  - company: tiger analytics
+    domain: tigeranalytics.com
+  - company: toborlife ai
+    domain: toborlife.ai
+  - company: toprankers
+    domain: toprankers.com
+  - company: tredence
+    domain: tredence.com
+  - company: truein
+    domain: truein.com
+  - company: truviz
+    domain: truviz.ai
+  - company: turing
+    domain: turing.com
+  - company: twilio
+    domain: twilio.com
+  - company: uber
+    domain: uber.com
+  - company: unilever
+    domain: unilever.co
+  - company: unitedhealth group
+    domain: unitedhealthgroup.com
+  - company: useready
+    domain: useready.com
+  - company: ushur
+    domain: ushur.ai
+  - company: valorant
+    domain: valorant.com
+  - company: verista
+    domain: verista.com
+  - company: victor arc
+    domain: victorarc.com
+  - company: virtu financial
+    domain: virtu.com
+  - company: visa
+    domain: visa.co.in
+  - company: vodafoneziggo
+    domain: vodafoneziggo.nl
+  - company: volt money
+    domain: voltmoney.in
+  - company: voxa
+    domain: voxa.com
+  - company: walmart
+    domain: walmart.com
+  - company: walmart data ventures
+    domain: walmartdataventures.com
+  - company: walmart global tech
+    domain: walmart.com
+  - company: walmart global tech india
+    domain: walmart.com
+  - company: watson search partner
+    domain: watsonsearchpartner.com
+  - company: wayground
+    domain: wayground.com
+  - company: weave
+    domain: weave.com
+  - company: wells fargo
+    domain: wellsfargo.com
+  - company: wenger watson
+    domain: wengerwatson.com
+  - company: why waste
+    domain: whywaste.io
+  - company: wipro
+    domain: wipro.com
+  - company: wisemonk
+    domain: wisemonk.io
+  - company: wissen technology
+    domain: wissen.com
+  - company: workday
+    domain: workday.com
+  - company: workofficially
+    domain: workofficially.com
+  - company: wowmaterials
+    domain: wowmaterials.in
+  - company: xebia
+    domain: xebia.com
+  - company: xiphias immigration
+    domain: xiphiasimmigration.com
+  - company: yourtribe
+    domain: yourtribe.com
+  - company: zalando
+    domain: zalando.com
+  - company: zeta
+    domain: zeta.tech
+  - company: zoox
+    domain: zoox.com
+  - company: zoronal
+    domain: zoronal.com
+  - company: zyoin group
+    domain: zyoin.com
+  - company: zype
+    domain: zype.com

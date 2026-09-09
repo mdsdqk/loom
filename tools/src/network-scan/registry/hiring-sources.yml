@@ -1,0 +1,799 @@
+# Known company -> careers page and applicant-tracking system, reused across scans.
+# Public employer information only; no candidate data. Hand edits win over discovery.
+sources:
+  - company_id: accenture
+    company_domain: accenture.com
+    careers_url: https://www.accenture.com/in-en/careers
+    provider: workday
+    account: accenture/wd103/AccentureCareers
+    account_extra:
+      tenant: accenture
+      dc: wd103
+      site: AccentureCareers
+    confidence: 0.95
+    status: active
+  - company_id: activate
+    company_domain: activate.com
+    careers_url: https://www.activate.com/careers
+    provider: greenhouse
+    account: activate
+    confidence: 0.8
+    status: active
+    verified_name: Activate Global, Inc
+  - company_id: airbnb
+    company_domain: airbnb.com
+    careers_url: https://careers.airbnb.com/
+    provider: greenhouse
+    account: airbnb
+    confidence: 0.8
+    status: active
+    verified_name: Airbnb
+  - company_id: airbus
+    company_domain: airbus.com
+    careers_url: https://www.airbus.com/en/careers
+    provider: workday
+    account: ag/wd3/Airbus
+    account_extra:
+      tenant: ag
+      dc: wd3
+      site: Airbus
+    confidence: 0.95
+    status: active
+  - company_id: amazon
+    company_domain: amazon.com
+    careers_url: https://amazon.jobs/en/
+    provider: amazon
+    account: amazon
+    confidence: 0.95
+    status: active
+  - company_id: amazon-web-services
+    company_domain: aws.amazon.com
+    careers_url: https://aws.amazon.com/careers/
+    provider: amazon
+    account: amazon
+    confidence: 0.95
+    status: active
+  - company_id: anthropic
+    company_domain: anthropic.com
+    careers_url: https://www.anthropic.com/careers
+    provider: greenhouse
+    account: anthropic
+    confidence: 0.8
+    status: active
+    verified_name: Anthropic
+  - company_id: arcesium
+    company_domain: arcesium.com
+    careers_url: https://www.arcesium.com/careers
+    provider: greenhouse
+    account: arcesiumllc
+    confidence: 0.99
+    status: active
+    verified_name: Arcesium LLC
+  - company_id: arctic-wolf
+    company_domain: arcticwolf.com
+    careers_url: https://arcticwolf.com/company/careers/
+    provider: workday
+    account: arcticwolf/wd1/External
+    account_extra:
+      tenant: arcticwolf
+      dc: wd1
+      site: External
+    confidence: 0.95
+    status: active
+  - company_id: arm
+    company_domain: arm.com
+    careers_url: https://careers.arm.com/search-jobs
+    provider: unsupported:icims
+    account: earlycareers-arm
+    confidence: 0.9
+    status: unsupported
+    note: earlycareers-arm.icims.com
+  - company_id: biotronik
+    company_domain: biotronik.com
+    careers_url: >-
+      https://www.biotronik.com/en-int/news/blog/women-at-biotronik-four-of-our-most-inspiring-leaders-talk-about-the-most-important-lessons-from-their-careers-us
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career012.successfactors.eu
+  - company_id: boeing
+    company_domain: boeing.com
+    careers_url: >-
+      https://jobs.boeing.com/?utm_source=boeing.com&utm_medium=careerslink&utm_campaign=homepage&utm_content=top-nav-careers
+    provider: workday
+    account: boeing/wd1/EXTERNAL_CAREERS
+    account_extra:
+      tenant: boeing
+      dc: wd1
+      site: EXTERNAL_CAREERS
+    confidence: 0.95
+    status: active
+  - company_id: bread-financial
+    company_domain: breadfinancial.com
+    careers_url: https://careers.breadfinancial.com/in/en
+    provider: unsupported:phenom
+    confidence: 0.9
+    status: unsupported
+    note: phenompeople.com
+  - company_id: browserstack
+    company_domain: browserstack.com
+    careers_url: https://www.browserstack.com/careers
+    provider: workday
+    account: browserstack/wd3/External
+    account_extra:
+      tenant: browserstack
+      dc: wd3
+      site: External
+    confidence: 0.95
+    status: active
+  - company_id: bt-group
+    company_domain: bt.com
+    careers_url: https://jobs.bt.com/
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career2.successfactors.eu
+  - company_id: chubb
+    company_domain: chubb.com
+    careers_url: https://fa-ewgu-saasfaprod1.fa.ocs.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_2001
+    provider: unsupported:oracle_cloud
+    confidence: 0.9
+    status: unsupported
+    note: ocs.oraclecloud.com/hcmUI
+  - company_id: cisco
+    company_domain: cisco.com
+    careers_url: https://careers.cisco.com/global/en/home
+    provider: unsupported:phenom
+    confidence: 0.9
+    status: unsupported
+    note: phenompeople.com
+  - company_id: citi
+    company_domain: citi.com
+    careers_url: https://jobs.citi.com/
+    provider: workday
+    account: citi/wd5/2
+    account_extra:
+      tenant: citi
+      dc: wd5
+      site: '2'
+    confidence: 0.95
+    status: active
+  - company_id: citrix
+    company_domain: citrix.com
+    careers_url: https://careers.cloud.com/
+    provider: workday
+    account: tibco/wd5/Cloud_Software_Group
+    account_extra:
+      tenant: tibco
+      dc: wd5
+      site: Cloud_Software_Group
+    confidence: 0.95
+    status: active
+  - company_id: codacy
+    company_domain: codacy.com
+    careers_url: https://www.codacy.com/careers
+    provider: unsupported:personio
+    account: qamine-portugal
+    confidence: 0.9
+    status: unsupported
+    note: qamine-portugal.jobs.personio.com
+  - company_id: cognite
+    company_domain: cognite.com
+    careers_url: https://www.cognite.com/ja-jp/company/careers
+    provider: greenhouse
+    account: cognite
+    confidence: 0.8
+    status: active
+    verified_name: Cognite - AI for Industry
+  - company_id: deloitte
+    company_domain: deloitte.com
+    careers_url: https://southasiacareers.deloitte.com/
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career44.sapsf.com
+  - company_id: deloitte-consulting
+    company_domain: deloitte.com
+    careers_url: https://southasiacareers.deloitte.com/
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career44.sapsf.com
+  - company_id: dentsu-global-services
+    company_domain: dentsu.com
+    careers_url: https://www.dentsu.com/careers
+    provider: workday
+    account: dentsuaegis/wd3/DAN_GLOBAL
+    account_extra:
+      tenant: dentsuaegis
+      dc: wd3
+      site: DAN_GLOBAL
+    confidence: 0.95
+    status: active
+  - company_id: deutsche-telekom
+    company_domain: telekom.com
+    careers_url: https://careers.telekom.com/en
+    provider: unsupported:eightfold
+    account: telekom-growthhub
+    confidence: 0.9
+    status: unsupported
+    note: telekom-growthhub.eightfold.ai
+  - company_id: ensono
+    company_domain: ensono.com
+    careers_url: https://www.ensono.com/insights-and-news/expert-opinions/millennial-perspective-stem-careers/
+    provider: greenhouse
+    account: ensono
+    confidence: 0.8
+    status: active
+    verified_name: Ensono
+  - company_id: envoy-global
+    company_domain: envoyglobal.com
+    careers_url: https://www.envoyglobal.com/about-us/careers/
+    provider: greenhouse
+    account: envoyglobalinc
+    confidence: 0.99
+    status: active
+    verified_name: Envoy Global, Inc.
+  - company_id: epicor
+    company_domain: epicor.com
+    careers_url: https://www.epicor.com/en/jobs/
+    provider: workday
+    account: epicorsoftware/wd5/epicorjobs
+    account_extra:
+      tenant: epicorsoftware
+      dc: wd5
+      site: epicorjobs
+    confidence: 0.95
+    status: active
+  - company_id: ericsson
+    company_domain: ericsson.com
+    careers_url: https://jobs.ericsson.com/careers
+    provider: unsupported:eightfold
+    account: app
+    confidence: 0.9
+    status: unsupported
+    note: app.eightfold.ai
+  - company_id: ethos
+    company_domain: ethos.com
+    careers_url: >-
+      https://www.ethos.com/tech-and-ethos/from-psychotherapy-to-coding-how-i-transitioned-to-a-career-in-stem/
+    provider: greenhouse
+    account: ethos
+    confidence: 0.8
+    status: active
+    verified_name: Ethos
+  - company_id: expedia-group
+    company_domain: expediagroup.com
+    careers_url: https://careers.expediagroup.com/
+    provider: workday
+    account: expedia/wd108/search
+    account_extra:
+      tenant: expedia
+      dc: wd108
+      site: search
+    confidence: 0.95
+    status: active
+  - company_id: flexera
+    company_domain: flexera.com
+    careers_url: https://www.flexera.com/about-us/careers
+    provider: workday
+    account: flexerasoftware/wd1/FlexeraSoftware
+    account_extra:
+      tenant: flexerasoftware
+      dc: wd1
+      site: FlexeraSoftware
+    confidence: 0.95
+    status: active
+  - company_id: genpact
+    company_domain: genpact.com
+    careers_url: https://www.genpact.com/careers
+    provider: workday
+    account: genpact/wd108/External_Careers
+    account_extra:
+      tenant: genpact
+      dc: wd108
+      site: External_Careers
+    confidence: 0.95
+    status: active
+  - company_id: gushwork
+    company_domain: gushwork.ai
+    careers_url: https://www.gushwork.ai/careers
+    provider: lever
+    account: gushwork
+    confidence: 0.95
+    status: active
+  - company_id: headout
+    company_domain: headout.com
+    provider: greenhouse
+    confidence: 0.85
+    status: active
+    careers_url: https://www.headout.com/careers/
+    account: headoutcareers
+    note: found by rendering the careers page
+  - company_id: imc-trading
+    company_domain: imc.com
+    careers_url: https://www.imc.com/in/careers
+    provider: greenhouse
+    account: imc
+    confidence: 0.8
+    status: active
+    verified_name: IMC
+  - company_id: inmobi
+    company_domain: inmobi.com
+    careers_url: https://www.inmobi.com/company/careers
+    provider: greenhouse
+    account: inmobi
+    confidence: 0.8
+    status: active
+    verified_name: InMobi
+  - company_id: intapp
+    company_domain: intapp.com
+    careers_url: https://www.intapp.com/working-at-intapp/
+    provider: workday
+    account: intapp/wd1/Intapp
+    account_extra:
+      tenant: intapp
+      dc: wd1
+      site: Intapp
+    confidence: 0.95
+    status: active
+  - company_id: iqvia
+    company_domain: iqvia.com
+    careers_url: >-
+      https://jobs.iqvia.com/en?utm_source=iqvia.com&amp%3Butm_medium=referral&amp%3Butm_campaign=careersnav
+    provider: workday
+    account: iqvia/wd1/IQVIA
+    account_extra:
+      tenant: iqvia
+      dc: wd1
+      site: IQVIA
+    confidence: 0.95
+    status: active
+  - company_id: jlr
+    company_domain: jlr.com
+    careers_url: https://careers.jaguarlandrover.com/
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career5.successfactors.eu
+  - company_id: jpmorgan-chase
+    company_domain: jpmorganchase.com
+    careers_url: >-
+      https://www.jpmorganchase.com/newsroom/press-releases/2016/jpm-private-bank-exploresgermanys-investment-opportunities
+    provider: unsupported:oracle_cloud
+    confidence: 0.9
+    status: unsupported
+    note: fa.oraclecloud.com/hcmUI
+  - company_id: jpmorganchase
+    company_domain: jpmorganchase.com
+    careers_url: >-
+      https://www.jpmorganchase.com/newsroom/press-releases/2016/jpm-private-bank-exploresgermanys-investment-opportunities
+    provider: unsupported:oracle_cloud
+    confidence: 0.9
+    status: unsupported
+    note: fa.oraclecloud.com/hcmUI
+  - company_id: kla
+    company_domain: kla.com
+    careers_url: https://www.kla.com/ko/advance/life-at-kla/club-highlight-basketball
+    provider: workday
+    account: kla/wd1/Search
+    account_extra:
+      tenant: kla
+      dc: wd1
+      site: Search
+    confidence: 0.95
+    status: active
+  - company_id: kognitos
+    company_domain: kognitos.com
+    careers_url: https://www.kognitos.com/careers/
+    provider: ashby
+    account: Kognitos
+    confidence: 0.95
+    status: active
+  - company_id: kratikal
+    company_domain: kratikal.com
+    careers_url: https://kratikal.zohorecruit.com/jobs/Careers
+    provider: unsupported:zoho_recruit
+    account: kratikal
+    confidence: 0.9
+    status: unsupported
+    note: kratikal.zohorecruit.com
+  - company_id: kreditbee
+    company_domain: kreditbee.in
+    provider: unsupported:darwinbox
+    confidence: 0.8
+    status: unsupported
+    careers_url: https://www.kreditbee.in/careers
+    account: kreditbee
+    note: 'found by rendering: kreditbee.darwinbox.in'
+  - company_id: lockheed-martin
+    company_domain: lockheedmartin.com
+    careers_url: https://www.lockheedmartin.com/en-us/careers/index.html
+    provider: unsupported:eightfold
+    account: lockheedmartin
+    confidence: 0.9
+    status: unsupported
+    note: lockheedmartin.eightfold.ai
+  - company_id: lseg
+    company_domain: lseg.com
+    careers_url: https://www.lseg.com/en/careers
+    provider: workday
+    account: lseg/wd3/Careers
+    account_extra:
+      tenant: lseg
+      dc: wd3
+      site: Careers
+    confidence: 0.95
+    status: active
+  - company_id: lumos-labs
+    company_domain: lumos.com
+    careers_url: https://www.lumos.com/careers
+    provider: ashby
+    account: lumos
+    confidence: 0.95
+    status: active
+  - company_id: mann-hummel
+    company_domain: mann-hummel.com
+    careers_url: https://www.mann-hummel.com/en/career.html
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career5.successfactors.eu
+  - company_id: mongodb
+    company_domain: mongodb.com
+    careers_url: https://www.mongodb.com/company/careers/benefits/us
+    provider: greenhouse
+    account: mongodb
+    confidence: 0.8
+    status: active
+    verified_name: MongoDB
+  - company_id: moniepoint-group
+    company_domain: moniepoint.com
+    careers_url: https://moniepoint.com/careers
+    provider: greenhouse
+    account: moniepoint
+    confidence: 0.8
+    status: active
+    verified_name: Moniepoint
+  - company_id: mpokket
+    company_domain: mpokket.in
+    careers_url: https://www.mpokket.in/career
+    provider: unsupported:darwinbox
+    account: mpokket
+    confidence: 0.9
+    status: unsupported
+    note: mpokket.darwinbox.in
+  - company_id: new-relic
+    company_domain: newrelic.com
+    careers_url: https://newrelic.com/careers
+    provider: greenhouse
+    account: newrelic
+    confidence: 0.8
+    status: active
+    verified_name: New Relic
+  - company_id: nick-scali
+    company_domain: nickscali.com.au
+    careers_url: https://www.nickscali.com.au/careers
+    provider: smartrecruiters
+    account: NickScali
+    confidence: 0.99
+    status: active
+    verified_name: Nick Scali
+  - company_id: nudge
+    company_domain: nudge.com
+    careers_url: https://nudge.com/careers/
+    provider: ashby
+    account: nudge
+    confidence: 0.95
+    status: active
+  - company_id: nutanix
+    company_domain: nutanix.com
+    careers_url: https://jobs.jobvite.com/nutanix
+    provider: unsupported:jobvite
+    account: nutanix
+    confidence: 0.9
+    status: unsupported
+    note: jobs.jobvite.com/nutanix
+  - company_id: oaknorth
+    company_domain: oaknorth.com
+    careers_url: https://oaknorth.com/careers/
+    provider: ashby
+    account: oaknorth
+    confidence: 0.95
+    status: active
+  - company_id: okta
+    company_domain: okta.com
+    careers_url: https://www.okta.com/resources/videos/okta-careers-people-at-okta/
+    provider: greenhouse
+    account: okta
+    confidence: 0.8
+    status: active
+    verified_name: Okta
+  - company_id: onsurity
+    company_domain: onsurity.com
+    careers_url: https://www.onsurity.com/careers
+    provider: unsupported:keka
+    account: onsurity
+    confidence: 0.9
+    status: unsupported
+    note: onsurity.keka.com
+  - company_id: paytm
+    company_domain: paytm.com
+    careers_url: https://paytm.com/careers/
+    provider: lever
+    account: paytm
+    confidence: 0.95
+    status: active
+  - company_id: persistent-systems
+    company_domain: persistentsystems.com
+    careers_url: https://persistentsystems.com/careers/
+    provider: unsupported:icims
+    account: careers-persistentsystems
+    confidence: 0.9
+    status: unsupported
+    note: careers-persistentsystems.icims.com
+  - company_id: postman
+    company_domain: postman.com
+    careers_url: https://www.postman.com/company/careers/
+    provider: greenhouse
+    account: postman
+    confidence: 0.8
+    status: active
+    verified_name: Postman
+  - company_id: publicis-sapient
+    company_domain: publicissapient.com
+    careers_url: https://careers.publicissapient.com/
+    provider: unsupported:icims
+    account: referral-publicisgroupe
+    confidence: 0.9
+    status: unsupported
+    note: referral-publicisgroupe.icims.com
+  - company_id: quantinuum
+    company_domain: quantinuum.com
+    careers_url: https://www.quantinuum.com/company/careers
+    provider: lever
+    account: quantinuum
+    confidence: 0.95
+    status: active
+  - company_id: quantiphi
+    company_domain: quantiphi.com
+    careers_url: https://quantiphi.com/careers/
+    provider: workday
+    account: quantiphi/wd1/Careers_at_Quantiphi
+    account_extra:
+      tenant: quantiphi
+      dc: wd1
+      site: Careers_at_Quantiphi
+    confidence: 0.95
+    status: active
+  - company_id: quest-global
+    company_domain: questglobal.com
+    careers_url: https://careers.quest-global.com/global/en/life-at-quest-global
+    provider: unsupported:phenom
+    confidence: 0.9
+    status: unsupported
+    note: phenompeople.com
+  - company_id: rakuten-india
+    company_domain: rakuten.com
+    careers_url: https://www.rakuten.com/careers
+    provider: workday
+    account: rakuten/wd1/RakutenRewards
+    account_extra:
+      tenant: rakuten
+      dc: wd1
+      site: RakutenRewards
+    confidence: 0.95
+    status: active
+  - company_id: razorpay
+    company_domain: razorpay.com
+    careers_url: https://razorpay.com/careers/
+    provider: greenhouse
+    account: razorpaysoftwareprivatelimited
+    confidence: 0.99
+    status: active
+    verified_name: Razorpay Software Private Limited
+  - company_id: revspot
+    company_domain: revspot.in
+    careers_url: https://revspot.ai/careers.html
+    provider: unsupported:keka
+    account: revspottechnologiesprivatelimited
+    confidence: 0.9
+    status: unsupported
+    note: revspottechnologiesprivatelimited.keka.com
+  - company_id: ruckus-networks
+    company_domain: ruckusnetworks.com
+    careers_url: https://jobs.vistancenetworks.com/
+    provider: unsupported:successfactors
+    confidence: 0.9
+    status: unsupported
+    note: career4.successfactors.com
+  - company_id: sabre
+    company_domain: sabre.com
+    careers_url: https://www.sabre.com/careers/
+    provider: workday
+    account: sabre/wd1/SabreJobs
+    account_extra:
+      tenant: sabre
+      dc: wd1
+      site: SabreJobs
+    confidence: 0.95
+    status: active
+  - company_id: sereact
+    company_domain: sereact.ai
+    careers_url: https://sereact.ai/careers
+    provider: ashby
+    account: sereact
+    confidence: 0.95
+    status: active
+  - company_id: signzy
+    company_domain: signzy.com
+    careers_url: https://www.signzy.com/careers
+    provider: unsupported:keka
+    account: signzy
+    confidence: 0.9
+    status: unsupported
+    note: signzy.keka.com
+  - company_id: sisa
+    company_domain: sisa.ai
+    careers_url: https://sisa.ai/careers
+    provider: unsupported:keka
+    account: sisainfosec
+    confidence: 0.9
+    status: unsupported
+    note: sisainfosec.keka.com
+  - company_id: smartsheet
+    company_domain: smartsheet.com
+    careers_url: >-
+      https://www.smartsheet.com/content-center/executive-center/customer-stories/how-i-used-smartsheet-propel-my-organization-and-my-career-forward
+    provider: greenhouse
+    account: smartsheet
+    confidence: 0.8
+    status: active
+    verified_name: Smartsheet
+  - company_id: target
+    company_domain: target.com
+    careers_url: https://corporate.target.com/careers
+    provider: workday
+    account: target/wd5/targetcareers
+    account_extra:
+      tenant: target
+      dc: wd5
+      site: targetcareers
+    confidence: 0.95
+    status: active
+  - company_id: telestream
+    company_domain: telestream.com
+    careers_url: https://www.telestream.com/careers/
+    provider: workable
+    account: telestream
+    confidence: 0.99
+    status: active
+    verified_name: Telestream
+  - company_id: teragonia
+    company_domain: teragonia.com
+    careers_url: https://teragonia.com/careers/
+    provider: workable
+    account: teragonia
+    confidence: 0.99
+    status: active
+    verified_name: Teragonia
+  - company_id: thomson-reuters
+    company_domain: thomsonreuters.com
+    careers_url: https://www.thomsonreuters.com/en/careers
+    provider: workday
+    account: thomsonreuters/wd5/External_Career_Site
+    account_extra:
+      tenant: thomsonreuters
+      dc: wd5
+      site: External_Career_Site
+    confidence: 0.95
+    status: active
+  - company_id: toprankers
+    company_domain: toprankers.com
+    careers_url: https://www.toprankers.com/careers
+    provider: unsupported:keka
+    account: toprankers
+    confidence: 0.9
+    status: unsupported
+    note: toprankers.keka.com
+  - company_id: turing
+    company_domain: turing.com
+    careers_url: https://www.turing.com/jobs
+    provider: greenhouse
+    account: turing
+    confidence: 0.8
+    status: active
+    verified_name: Turing
+  - company_id: twilio
+    company_domain: twilio.com
+    careers_url: https://jobs.twilio.com/careers
+    provider: unsupported:eightfold
+    account: vs-errors
+    confidence: 0.9
+    status: unsupported
+    note: vs-errors.eightfold.ai
+  - company_id: unilever
+    company_domain: unilever.co
+    careers_url: https://careers.unilever.com/en/colombia
+    provider: workday
+    account: unilever/wd3/Unilever_Experienced_Professionals
+    account_extra:
+      tenant: unilever
+      dc: wd3
+      site: Unilever_Experienced_Professionals
+    confidence: 0.95
+    status: active
+  - company_id: unitedhealth-group
+    company_domain: unitedhealthgroup.com
+    careers_url: https://careers.unitedhealthgroup.com/search-jobs
+    provider: unsupported:taleo
+    account: uhg
+    confidence: 0.9
+    status: unsupported
+    note: uhg.taleo.net
+  - company_id: virtu-financial
+    company_domain: virtu.com
+    careers_url: https://www.virtu.com/careers/
+    provider: greenhouse
+    account: virtu
+    confidence: 0.99
+    status: active
+    verified_name: Virtu Financial
+  - company_id: wayground
+    company_domain: wayground.com
+    careers_url: https://wayground.com/home/careers
+    provider: lever
+    account: wayground
+    confidence: 0.95
+    status: active
+  - company_id: wissen-technology
+    company_domain: wissen.com
+    careers_url: https://www.wissen.com/career/opportunities-wissen-technology
+    provider: unsupported:zoho_recruit
+    account: wissen
+    confidence: 0.9
+    status: unsupported
+    note: wissen.zohorecruit.in
+  - company_id: workday
+    company_domain: workday.com
+    careers_url: https://www.workday.com/en-us/company/careers/overview.html
+    provider: workday
+    account: workday/wd5/Workday
+    account_extra:
+      tenant: workday
+      dc: wd5
+      site: Workday
+    confidence: 0.95
+    status: active
+  - company_id: xebia
+    company_domain: xebia.com
+    careers_url: https://xebia.com/careers/
+    provider: greenhouse
+    account: xebiaapac
+    confidence: 0.99
+    status: active
+    verified_name: Xebia APAC
+  - company_id: zeta
+    company_domain: zeta.tech
+    provider: lever
+    confidence: 0.85
+    status: active
+    careers_url: https://www.zeta.tech/in/careers
+    account: zeta
+    note: found by rendering the careers page
+  - company_id: zoox
+    company_domain: zoox.com
+    provider: lever
+    confidence: 0.85
+    status: active
+    careers_url: https://zoox.com/careers
+    account: zoox
+    note: found by rendering the careers page
+  - company_id: zype
+    company_domain: zype.com
+    careers_url: https://careers.backlight.co/
+    provider: unsupported:teamtailor
+    account: www
+    confidence: 0.9
+    status: unsupported
+    note: www.teamtailor.com

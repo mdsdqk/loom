@@ -53,6 +53,9 @@ importers:
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
+      zod:
+        specifier: ^4.4.3
+        version: 4.5.4
     devDependencies:
       '@types/js-yaml':
         specifier: ^4.0.9
@@ -66,9 +69,6 @@ importers:
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
-      zod:
-        specifier: ^4.4.3
-        version: 4.5.4
 
 packages:
 

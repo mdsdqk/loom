@@ -7,7 +7,12 @@
     "pdf-parser": "dist/pdf-parser-cli.js",
     "csv-parser": "dist/csv-parser-cli.js",
     "create-opportunity": "dist/create-opportunity-cli.js",
-    "build-resume": "dist/build-resume-cli.js"
+    "build-resume": "dist/build-resume-cli.js",
+    "network-import": "dist/network-scan/import/import-cli.js",
+    "network-domains": "dist/network-scan/domains-cli.js",
+    "network-discover": "dist/network-scan/discover-cli.js",
+    "network-jobs": "dist/network-scan/jobs-cli.js",
+    "network-report": "dist/network-scan/report-cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-resume-assets.mjs",
@@ -15,6 +20,11 @@
     "csv-parser": "tsx src/csv-parser-cli.ts",
     "create-opportunity": "tsx src/create-opportunity-cli.ts",
     "build-resume": "tsx src/build-resume-cli.ts",
+    "network-import": "tsx src/network-scan/import/import-cli.ts",
+    "network-domains": "tsx src/network-scan/domains-cli.ts",
+    "network-discover": "tsx src/network-scan/discover-cli.ts",
+    "network-jobs": "tsx src/network-scan/jobs-cli.ts",
+    "network-report": "tsx src/network-scan/report-cli.ts",
     "test": "vitest run",
     "lint": "eslint --config ../eslint.config.mjs ."
   },
@@ -24,13 +34,13 @@
     "nunjucks": "^3.2.4",
     "pdfjs-dist": "^4.9.155",
     "playwright": "^1.62.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.7.2",
     "@types/nunjucks": "^3.2.6",
-    "yaml": "^2.9.0",
-    "zod": "^4.4.3"
+    "yaml": "^2.9.0"
   }
 }
