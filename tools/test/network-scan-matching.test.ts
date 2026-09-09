@@ -420,3 +420,32 @@ describe("isSameRole direction", () => {
     expect(isSameRole("Software Engineer", "Software Engineer II - Payments (Remote)")).toBe(true);
   });
 });
+
+describe("collapse composed with location filtering", () => {
+  // The bug this guards: collapse kept only the representative posting's city,
+  // so a role open in Toronto and Bengaluru was judged as Toronto-only and
+  // rejected for a Bengaluru candidate. Testing collapse and location
+  // separately never caught it — only their composition does.
+  const multiCity = [
+    job({ id: "gh:1", title: "Senior Software Engineer", locations: ["Toronto, Canada"] }),
+    job({ id: "gh:2", title: "Senior Software Engineer", locations: ["Bengaluru, India"] }),
+  ];
+
+  it("keeps a role that is open in a wanted city, whichever posting represents it", () => {
+    const [collapsed] = collapseVariants(multiCity).jobs;
+    expect(locationCompatible(collapsed, preferences)).toBe(true);
+  });
+
+  it("is unaffected by which posting sorts first", () => {
+    const [reversed] = collapseVariants([...multiCity].reverse()).jobs;
+    expect(locationCompatible(reversed, preferences)).toBe(true);
+  });
+
+  it("still rejects a role open only in unwanted cities", () => {
+    const [collapsed] = collapseVariants([
+      job({ id: "a", title: "Engineer", locations: ["Toronto, Canada"] }),
+      job({ id: "b", title: "Engineer", locations: ["Lima, Peru"] }),
+    ]).jobs;
+    expect(locationCompatible(collapsed, preferences)).toBe(false);
+  });
+});

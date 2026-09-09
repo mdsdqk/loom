@@ -1,6 +1,7 @@
 import { collapseVariants } from "./collapse.js";
 import { scoreDescription } from "./keywords.js";
 import { rankJobs } from "./rank.js";
+import { leverageScore } from "../report.js";
 import { structuralVerdict } from "./structural.js";
 import type { Level } from "./structural.js";
 import { familyVerdict } from "./taxonomy.js";
@@ -114,8 +115,22 @@ export function runMatching(
     reasons: familyReasons,
   });
 
-  // Tier 2.5 — what still lacks the text tier 3 needs.
-  const needsDescription = afterFamily.filter((job) => !descriptions.has(job.id));
+  // Tier 2.5 — what still lacks the text tier 3 needs, most worth fetching
+  // first. The enrichment budget is finite, so spending it on whichever job id
+  // sorted first wastes it; a confirmed discipline at a company the candidate
+  // has real pull at is the description worth buying.
+  const leverage = new Map(
+    (network.companies as Company[]).map((company) => [company.id, leverageScore(company)])
+  );
+  const needsDescription = afterFamily
+    .filter((job) => !descriptions.has(job.id))
+    .sort((a, b) => {
+      const confirmedDelta = Number(confirmed.has(b.id)) - Number(confirmed.has(a.id));
+      if (confirmedDelta !== 0) return confirmedDelta;
+      const leverageDelta = (leverage.get(b.company_id) ?? 0) - (leverage.get(a.company_id) ?? 0);
+      if (leverageDelta !== 0) return leverageDelta;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
 
   // Tier 3 — keyword overlap, for whatever text is available.
   const scoreReasons: Record<string, number> = {};
@@ -147,6 +162,31 @@ export function runMatching(
   });
 
   return { ranked, needsDescription, needsDisciplineReview, funnel };
+}
+
+/**
+ * Which jobs the funnel keeps, as a set of ids.
+ *
+ * Calibration must ask the funnel itself rather than re-deriving its rules:
+ * a hand-written copy of the decision drifted from the real one, applying
+ * neither the collapse step nor the score threshold, and so reported jobs as
+ * kept that `runMatching` actually dropped.
+ */
+export function survivingJobIds(
+  jobs: Job[],
+  network: NetworkImport,
+  descriptions: Map<string, string>,
+  options: MatchOptions
+): Set<string> {
+  const result = runMatching(jobs, network, descriptions, options);
+  // A collapsed row stands for every posting merged into it, so each of those
+  // postings survived too.
+  return new Set(
+    result.ranked.flatMap((entry) => {
+      const collapsed = entry.job as { id: string; variant_ids?: string[] };
+      return [collapsed.id, ...(collapsed.variant_ids ?? [])];
+    })
+  );
 }
 
 /** Renders the funnel so each stage's cost and effect is visible at a glance. */

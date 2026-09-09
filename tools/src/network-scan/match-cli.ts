@@ -7,10 +7,10 @@ import { appendDescriptions, loadDescriptions } from "./descriptions.js";
 import { HttpClient } from "./http/client.js";
 import { calibrate, formatCalibration, parseSavedJobs } from "./matching/calibration.js";
 import { fetchDescription, needsDescription } from "./matching/enrich.js";
-import { formatFunnel, runMatching } from "./matching/pipeline.js";
-import { structuralVerdict } from "./matching/structural.js";
+import { formatFunnel, runMatching, survivingJobIds } from "./matching/pipeline.js";
+import { isLevel, structuralVerdict } from "./matching/structural.js";
 import type { Level } from "./matching/structural.js";
-import { familyVerdict } from "./matching/taxonomy.js";
+import { FAMILY_NAMES, familyVerdict } from "./matching/taxonomy.js";
 import type { Family } from "./matching/taxonomy.js";
 import { loadExport } from "./import/export-reader.js";
 import { runPaths } from "./paths.js";
@@ -61,8 +61,25 @@ program
       const artifact = JobsArtifactSchema.parse(yaml.load(await readFile(paths.jobs, "utf8")));
       const descriptions = await loadDescriptions(paths.descriptions);
 
+      // Validate before anything runs: an unrecognised level or family silently
+      // produced an empty shortlist rather than an error.
+      for (const [flag, value] of [
+        ["--min-level", options.minLevel],
+        ["--max-level", options.maxLevel],
+      ] as const) {
+        if (value !== undefined && !isLevel(value)) {
+          throw new Error(`${flag} "${value}" is not a level. Expected one of: intern, junior, mid, senior, lead, executive`);
+        }
+      }
+
+      const families = options.families.split(",").map((f) => f.trim()).filter(Boolean);
+      const unknownFamily = families.find((f) => !FAMILY_NAMES.includes(f as Family));
+      if (unknownFamily) {
+        throw new Error(`--families "${unknownFamily}" is not a discipline. Expected some of: ${FAMILY_NAMES.join(", ")}`);
+      }
+
       const matchOptions = {
-        wantedFamilies: options.families.split(",").map((f) => f.trim()) as Family[],
+        wantedFamilies: families as Family[],
         minLevel: options.minLevel as Level | undefined,
         maxLevel: options.maxLevel as Level | undefined,
         maxAgeDays: options.maxAge ? Number.parseInt(options.maxAge, 10) : undefined,
@@ -149,6 +166,10 @@ program
               title: entry.job.title,
               locations: entry.job.locations,
               url: entry.job.job_url,
+              // A role listed in several cities keeps every posting's link, so
+              // the candidate can apply to the one they actually want.
+              variant_urls: (entry.job as { variant_urls?: string[] }).variant_urls,
+              variant_count: (entry.job as { variant_count?: number }).variant_count,
               matched_terms: entry.matchedTerms.slice(0, 15),
               ask: (referrers.get(entry.job.company_id) ?? []).map((person) => ({
                 name: person.name,
@@ -170,7 +191,13 @@ program
       if (exportDir) {
         const { rows } = await loadExport(resolve(exportDir));
         const saved = parseSavedJobs(rows.savedJobs);
+        // Ask the funnel what it actually kept, then explain any loss using the
+        // individual tiers. Re-deriving the decision here is what let the
+        // harness disagree with the pipeline it was supposed to be measuring.
+        const survivors = survivingJobIds(artifact.jobs, network, descriptions, matchOptions);
         const decide = (job: Job): string | null => {
+          if (survivors.has(job.id)) return null;
+
           const structural = structuralVerdict(job, {
             preferences: network.preferences,
             minLevel: matchOptions.minLevel,
@@ -178,8 +205,13 @@ program
             maxAgeDays: matchOptions.maxAgeDays,
           });
           if (!structural.keep) return `structural:${structural.stage}`;
+
           const family = familyVerdict(job.title, { wanted: matchOptions.wantedFamilies });
-          return family.keep ? null : `discipline:${family.family}`;
+          if (!family.keep) return `discipline:${family.family}`;
+
+          // Survived every tier individually but not the funnel as a whole —
+          // collapse or the score threshold removed it.
+          return "collapse or score threshold";
         };
         process.stderr.write(`\n${formatCalibration(calibrate(saved, artifact.jobs, decide))}\n`);
       }

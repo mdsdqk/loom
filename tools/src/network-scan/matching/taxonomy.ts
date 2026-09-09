@@ -33,6 +33,12 @@ export type Family =
   | "ambiguous"
   | "unknown";
 
+/** Every family name, for validating user input against a real list. */
+export const FAMILY_NAMES: Family[] = [
+  "engineering", "data", "product", "design", "finance", "legal", "sales",
+  "marketing", "people", "operations", "support", "research", "medical", "trades",
+];
+
 /**
  * Titles that read as engineering to a keyword test but are not a software
  * engineering role. Checked first, because "Engineering Operation Technician"
@@ -48,12 +54,21 @@ const DISQUALIFIERS: [Family, RegExp][] = [
 /** Ordered: the first family whose pattern matches wins. */
 const FAMILIES: [Family, RegExp][] = [
   [
+    // Checked before `research` so that a machine-learning *engineer* is not
+    // filed as a scientist and rejected outright — those are jobs a software
+    // engineer applies to.
     "engineering",
-    /\b(software engineer|software developer|sde|swe|developer|programmer|full ?stack|front ?end|back ?end|web engineer|mobile engineer|android|ios engineer|devops|site reliability|sre|platform engineer|infrastructure engineer|security engineer|qa engineer|test engineer|automation engineer|embedded|firmware|systems engineer|cloud engineer|engineering manager)\b/i,
+    /\b(software engineer|software developer|sde|swe|programmer|full ?stack|front ?end|back ?end|web engineer|mobile engineer|android|ios engineer|devops|site reliability|sre|platform engineer|infrastructure engineer|security engineer|qa engineer|test engineer|automation engineer|embedded|firmware|systems engineer|cloud engineer|engineering manager|machine learning engineer|ml engineer|ai engineer|data engineer)\b/i,
+  ],
+  [
+    // A bare "developer" is engineering only when nothing qualifies it into
+    // another discipline: "Business Developer" is a sales role.
+    "engineering",
+    /(?<!\b(?:business|market|land|property|real estate)\s)\bdevelopers?\b/i,
   ],
   [
     "data",
-    /\b(data engineer|data analyst|analytics engineer|business intelligence|bi developer|database administrator|dba|data warehouse|etl)\b/i,
+    /\b(data analyst|analytics engineer|business intelligence|bi developer|database administrator|dba|data warehouse|etl)\b/i,
   ],
   ["product", /\b(product manager|product owner|program manager|technical program|tpm|scrum master)\b/i],
   ["design", /\b(designer|ux|ui designer|user experience|user research|creative director)\b/i],
@@ -64,7 +79,8 @@ const FAMILIES: [Family, RegExp][] = [
   ["people", /\b(recruiter|talent acquisition|human resources|\bhr\b|people operations|people partner|compensation|benefits)\b/i],
   ["operations", /\b(operations|logistics|supply chain|procurement|fulfillment|warehouse manager|store manager|barista|cashier|associate - retail)\b/i],
   ["support", /\b(customer service|customer support|call ?cent|technical support)\b/i],
-  ["research", /\b(research scientist|applied scientist|research engineer|machine learning|\bml engineer\b|scientist)\b/i],
+  // Scientists, not engineers — ML/AI engineering is matched above.
+  ["research", /\b(research scientist|applied scientist|research engineer|scientist)\b/i],
 ];
 
 /**
@@ -79,18 +95,30 @@ export interface Classification {
   evidence?: string;
 }
 
+/**
+ * Titles are punctuated inconsistently across boards: "Front-End Engineer",
+ * "Front End Engineer" and "Frontend Engineer" are one job. Without folding
+ * separators, the hyphenated spelling missed every engineering pattern, fell
+ * through to `ambiguous`, and was then ranked below its identical twin.
+ */
+function foldSeparators(title: string): string {
+  return title.replace(/[-_/]+/g, " ").replace(/\s+/g, " ");
+}
+
 export function classifyTitle(title: string): Classification {
+  const folded = foldSeparators(title);
+
   for (const [family, pattern] of DISQUALIFIERS) {
-    const match = pattern.exec(title);
+    const match = pattern.exec(folded);
     if (match) return { family, evidence: match[0] };
   }
 
   for (const [family, pattern] of FAMILIES) {
-    const match = pattern.exec(title);
+    const match = pattern.exec(folded);
     if (match) return { family, evidence: match[0] };
   }
 
-  const ambiguous = AMBIGUOUS.exec(title);
+  const ambiguous = AMBIGUOUS.exec(folded);
   if (ambiguous) return { family: "ambiguous", evidence: ambiguous[0] };
 
   return { family: "unknown" };

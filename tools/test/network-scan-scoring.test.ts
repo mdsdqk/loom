@@ -366,3 +366,89 @@ describe("buildSkills", () => {
     expect(buildSkills({})).toEqual({ listed: [], held_titles: [], experience_terms: [] });
   });
 });
+
+describe("funnel composition, not just its parts", () => {
+  const network = {
+    source: "export",
+    imported_at: "2026-09-09T00:00:00.000Z",
+    counts: {
+      connection_rows: 0, connections_with_company: 0, companies: 0,
+      dropped_non_employer: 0, dropped_blank_company: 0, saved_jobs: 0, followed_orgs: 0,
+    },
+    preferences: { titles: [], locations: ["Bengaluru"], job_types: [], industries: [] },
+    skills,
+    companies: [],
+    review: [],
+    missing_files: [],
+  } as unknown as NetworkImport;
+
+  // The bug: collapse kept one posting's city, so a role open in Toronto and
+  // Bengaluru was judged Toronto-only and dropped. Every part passed its own
+  // test; only running them together caught it.
+  it("keeps a multi-city role that is open where the candidate wants", () => {
+    const result = runMatching(
+      [
+        job({ id: "gh:1", title: "Senior Software Engineer", locations: ["Toronto, Canada"] }),
+        job({ id: "gh:2", title: "Senior Software Engineer", locations: ["Bengaluru, India"] }),
+      ],
+      network,
+      new Map(),
+      { wantedFamilies: ["engineering"] }
+    );
+
+    expect(result.ranked).toHaveLength(1);
+  });
+
+  it("reports the surviving postings, not just the merged row", async () => {
+    const { survivingJobIds } = await import("../src/network-scan/matching/pipeline.js");
+    const survivors = survivingJobIds(
+      [
+        job({ id: "gh:1", title: "Senior Software Engineer", locations: ["Toronto, Canada"] }),
+        job({ id: "gh:2", title: "Senior Software Engineer", locations: ["Bengaluru, India"] }),
+      ],
+      network,
+      new Map(),
+      { wantedFamilies: ["engineering"] }
+    );
+
+    // Both postings survived; calibration must not think gh:2 was dropped.
+    expect(survivors.has("gh:1")).toBe(true);
+    expect(survivors.has("gh:2")).toBe(true);
+  });
+
+  it("prioritises enrichment by confidence then leverage, not by id", () => {
+    const withCompanies = {
+      ...network,
+      companies: [
+        { id: "big", canonical_name: "Big", aliases: [], connections: [], signals: { connection_count: 10, seniority: { leadership: 2, lead: 2, senior: 2, mid: 2, junior: 0, unknown: 0 }, saved_job_count: 1, followed: true, ex_employer: false, alumni: false } },
+        { id: "small", canonical_name: "Small", aliases: [], connections: [], signals: { connection_count: 1, seniority: { leadership: 0, lead: 0, senior: 0, mid: 1, junior: 0, unknown: 0 }, saved_job_count: 0, followed: false, ex_employer: false, alumni: false } },
+      ],
+    } as unknown as NetworkImport;
+
+    const result = runMatching(
+      [
+        job({ id: "aaa", title: "Solutions Architect", company_id: "small", locations: ["Bengaluru"] }),
+        job({ id: "zzz", title: "Senior Software Engineer", company_id: "big", locations: ["Bengaluru"] }),
+      ],
+      withCompanies,
+      new Map(),
+      { wantedFamilies: ["engineering"] }
+    );
+
+    // "zzz" sorts last by id but is a confirmed engineering role at the better
+    // connected company, so it is the description worth buying first.
+    expect(result.needsDescription[0].id).toBe("zzz");
+  });
+});
+
+describe("structural input validation", () => {
+  it("refuses an unrecognised level instead of rejecting every job", async () => {
+    const { structuralVerdict } = await import("../src/network-scan/matching/structural.js");
+    expect(() =>
+      structuralVerdict(job({ id: "1", title: "Engineer" }), {
+        preferences: { titles: [], locations: [], job_types: [], industries: [] },
+        maxLevel: "staff" as never,
+      })
+    ).toThrow(/not a level/);
+  });
+});

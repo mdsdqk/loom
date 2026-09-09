@@ -168,10 +168,14 @@ export function buildSkills(sources: {
       counts.set(term, (counts.get(term) ?? 0) + 1);
     }
   }
+  // Ordered by how often the term recurs, because consumers take the first N as
+  // "the most distinctive". Sorting alphabetically and then slicing kept
+  // whatever happened to start with "a" and dropped the rest, which is not what
+  // the callers assume. Ties break on the term so the order stays stable.
   const experienceTerms = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
     .filter(([, count]) => count > 1)
-    .map(([term]) => term)
-    .sort();
+    .map(([term]) => term);
 
   return { listed, held_titles: heldTitles, experience_terms: experienceTerms };
 }

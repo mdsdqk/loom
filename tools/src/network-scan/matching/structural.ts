@@ -136,9 +136,27 @@ export function locationCompatible(job: Job, preferences: CandidatePreferences):
   });
 }
 
+/** True when `value` names a level this module understands. */
+export function isLevel(value: string): value is Level {
+  return (LEVELS as readonly string[]).includes(value);
+}
+
 export function structuralVerdict(job: Job, criteria: StructuralCriteria): Verdict {
   const level = titleLevel(job.title);
   const rank = LEVELS.indexOf(level);
+
+  // An unrecognised bound must not silently become a filter. `indexOf` returns
+  // -1 for an unknown level, and every real level ranks above -1, so a typo in
+  // `maxLevel` rejected the entire corpus and produced an empty shortlist with
+  // no error. Refuse loudly instead.
+  for (const [name, value] of [
+    ["minLevel", criteria.minLevel],
+    ["maxLevel", criteria.maxLevel],
+  ] as const) {
+    if (value !== undefined && !isLevel(value)) {
+      throw new Error(`${name} "${value}" is not a level — expected one of ${LEVELS.join(", ")}`);
+    }
+  }
 
   if (criteria.minLevel && rank < LEVELS.indexOf(criteria.minLevel)) {
     return { keep: false, stage: "seniority", reason: `${level} is below the target level` };
