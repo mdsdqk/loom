@@ -12,10 +12,8 @@ export interface ParsedTabular {
   sheets: ParsedSheet[];
 }
 
-export function parseTabular(filePath: string): ParsedTabular {
-  const workbook = XLSX.readFile(filePath, { raw: true });
-
-  const sheets: ParsedSheet[] = workbook.SheetNames.map((name) => {
+function toSheets(workbook: XLSX.WorkBook): ParsedSheet[] {
+  return workbook.SheetNames.map((name) => {
     const worksheet = workbook.Sheets[name];
     const rows = XLSX.utils.sheet_to_json<Record<string, string | number | boolean | null>>(
       worksheet,
@@ -23,9 +21,27 @@ export function parseTabular(filePath: string): ParsedTabular {
     );
     return { name, rowCount: rows.length, rows };
   });
+}
+
+export function parseTabular(filePath: string): ParsedTabular {
+  const workbook = XLSX.readFile(filePath, { raw: true });
 
   return {
     source: basename(filePath),
-    sheets,
+    sheets: toSheets(workbook),
+  };
+}
+
+/**
+ * Same as `parseTabular`, but for delimited text already in memory. Used when
+ * the on-disk file needs preprocessing before parsing — e.g. a LinkedIn export
+ * CSV whose real header row sits below a preamble of free-text notes.
+ */
+export function parseDelimitedText(text: string, source: string): ParsedTabular {
+  const workbook = XLSX.read(text, { type: "string", raw: true });
+
+  return {
+    source,
+    sheets: toSheets(workbook),
   };
 }

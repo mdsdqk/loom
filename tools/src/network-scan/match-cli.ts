@@ -1,0 +1,291 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { Command } from "commander";
+import yaml from "js-yaml";
+import { mapWithConcurrency } from "./concurrency.js";
+import { appendDescriptions, loadDescriptions } from "./descriptions.js";
+import { HttpClient } from "./http/client.js";
+import { calibrate, formatCalibration, parseSavedJobs } from "./matching/calibration.js";
+import { fetchDescription, needsDescription } from "./matching/enrich.js";
+import { formatFunnel, runMatching, survivingJobIds } from "./matching/pipeline.js";
+import { assignSlugs } from "./matching/slug.js";
+import { checkPreferenceStaleness } from "./matching/staleness.js";
+import { isLevel, structuralVerdict } from "./matching/structural.js";
+import type { Level } from "./matching/structural.js";
+import { FAMILY_NAMES, familyVerdict } from "./matching/taxonomy.js";
+import type { Family } from "./matching/taxonomy.js";
+import { loadExport } from "./import/export-reader.js";
+import { runPaths } from "./paths.js";
+import { buildReferrerIndex } from "./referrals.js";
+import { JobsArtifactSchema, NetworkImportSchema } from "./schema.js";
+import type { Job } from "./schema.js";
+
+const program = new Command();
+
+interface MatchCliOptions {
+  candidate?: string;
+  export?: string;
+  output?: string;
+  families: string;
+  minLevel?: string;
+  maxLevel?: string;
+  maxAge?: string;
+  minScore?: string;
+  referralWeight: string;
+  titleWeight?: string;
+  levelWeight?: string;
+  top: string;
+  enrich: boolean;
+  enrichLimit: string;
+  concurrency: string;
+}
+
+program
+  .name("network-match")
+  .description("Filter and rank scanned jobs against the candidate, cheapest checks first")
+  .option("-c, --candidate <dir>", "candidate workspace directory")
+  .option("-e, --export <dir>", "LinkedIn export directory, for calibration against saved jobs")
+  .option("-o, --output <path>", "where to write the ranked matches")
+  .option("--families <list>", "comma-separated disciplines to keep", "engineering")
+  .option("--min-level <level>", "lowest acceptable seniority (intern|junior|mid|senior|lead|executive)")
+  .option("--max-level <level>", "highest acceptable seniority")
+  .option("--max-age <days>", "drop postings older than this, where dated")
+  .option("--min-score <n>", "drop jobs scoring below this (0-1) once they have a description")
+  .option("--referral-weight <n>", "how much who-you-know counts in the ranking (0-1)", "0.4")
+  .option("--title-weight <n>", "how much the job title matching your target titles counts (0-1)")
+  .option("--level-weight <n>", "how much the job's seniority matching your current level counts (0-1)")
+  .option("--top <n>", "how many matches to write", "200")
+  .option("--no-enrich", "skip fetching descriptions the list endpoints omitted")
+  .option("--enrich-limit <n>", "cap on descriptions fetched in one run", "400")
+  .option("--concurrency <n>", "in-flight HTTP requests", "6")
+  .action(async (options: MatchCliOptions) => {
+    try {
+      const paths = runPaths(options.candidate);
+      const network = NetworkImportSchema.parse(
+        yaml.load(await readFile(paths.networkImport, "utf8"))
+      );
+      const artifact = JobsArtifactSchema.parse(yaml.load(await readFile(paths.jobs, "utf8")));
+      const descriptions = await loadDescriptions(paths.descriptions);
+
+      // Validate before anything runs: an unrecognised level or family silently
+      // produced an empty shortlist rather than an error.
+      for (const [flag, value] of [
+        ["--min-level", options.minLevel],
+        ["--max-level", options.maxLevel],
+      ] as const) {
+        if (value !== undefined && !isLevel(value)) {
+          throw new Error(`${flag} "${value}" is not a level. Expected one of: intern, junior, mid, senior, lead, executive`);
+        }
+      }
+
+      const families = options.families.split(",").map((f) => f.trim()).filter(Boolean);
+      const unknownFamily = families.find((f) => !FAMILY_NAMES.includes(f as Family));
+      if (unknownFamily) {
+        throw new Error(`--families "${unknownFamily}" is not a discipline. Expected some of: ${FAMILY_NAMES.join(", ")}`);
+      }
+
+      const matchOptions = {
+        wantedFamilies: families as Family[],
+        minLevel: options.minLevel as Level | undefined,
+        maxLevel: options.maxLevel as Level | undefined,
+        maxAgeDays: options.maxAge ? Number.parseInt(options.maxAge, 10) : undefined,
+        minScore: options.minScore ? Number.parseFloat(options.minScore) : undefined,
+        referralWeight: Number.parseFloat(options.referralWeight),
+        // Exposed because the right value is a judgement about the candidate's
+        // own search, not something this tool can decide. Raising it pushes
+        // down roles that score well on skills but are not the kind of job
+        // asked for — a QA automation posting names many technologies, so it
+        // earns high skill coverage while being the wrong role entirely.
+        titleWeight: options.titleWeight ? Number.parseFloat(options.titleWeight) : undefined,
+        // Same reasoning as titleWeight: how hard to lean on the candidate's
+        // current career level, versus everything else, is their call.
+        levelWeight: options.levelWeight ? Number.parseFloat(options.levelWeight) : undefined,
+      };
+
+      process.stderr.write(
+        `Matching ${artifact.jobs.length} jobs against ${network.skills.listed.length} listed skills\n\n`
+      );
+
+      // Declared preferences may be years out of date; the candidate should
+      // see exactly what disagrees and why, not have it silently overridden.
+      const stalenessWarnings = checkPreferenceStaleness(network.preferences, network.career);
+      for (const warning of stalenessWarnings) {
+        process.stderr.write(`Note: ${warning.message}\n`);
+      }
+      if (stalenessWarnings.length > 0) process.stderr.write("\n");
+
+      // First pass: the cheap tiers, which decide what is worth enriching.
+      let result = runMatching(artifact.jobs, network, descriptions, matchOptions);
+
+      // Tier 2.5 — fetch the descriptions the cheap tiers proved worth paying for.
+      if (options.enrich && result.needsDescription.length > 0) {
+        const limit = Number.parseInt(options.enrichLimit, 10);
+        const targets = result.needsDescription
+          .filter((job) => needsDescription(job, descriptions))
+          .slice(0, limit);
+
+        if (targets.length > 0) {
+          process.stderr.write(
+            `Fetching ${targets.length} descriptions the list endpoints omitted` +
+              ` (of ${result.needsDescription.length} missing)\n`
+          );
+
+          const client = new HttpClient({
+            concurrency: Number.parseInt(options.concurrency, 10),
+            maxAttempts: 2,
+          });
+          let done = 0;
+          const fetched = await mapWithConcurrency(
+            targets,
+            Number.parseInt(options.concurrency, 10),
+            (job: Job) => fetchDescription(job, client),
+            () => {
+              if (++done % 50 === 0) process.stderr.write(`  ${done}/${targets.length}\n`);
+            }
+          );
+
+          const gained = fetched.filter((entry) => entry.text);
+          for (const entry of gained) descriptions.set(entry.id, entry.text!);
+          await appendDescriptions(
+            paths.descriptions,
+            gained.map((entry) => ({ id: entry.id, text: entry.text! }))
+          );
+          process.stderr.write(`  got ${gained.length}, failed ${fetched.length - gained.length}\n\n`);
+
+          // Re-run with the new text so scoring sees it.
+          result = runMatching(artifact.jobs, network, descriptions, matchOptions);
+        }
+      }
+
+      process.stderr.write(`Funnel\n${formatFunnel(result.funnel)}\n\n`);
+
+      const referrers = buildReferrerIndex(network.companies);
+      const top = result.ranked.slice(0, Number.parseInt(options.top, 10));
+
+      // Slugs are unique within *this written set* — the file a candidate
+      // actually reads — not the whole ranked pool, most of which never
+      // makes it to disk.
+      const slugs = assignSlugs(
+        top.map((entry) => ({
+          id: entry.job.id,
+          company: entry.job.company_name,
+          title: entry.job.title,
+        }))
+      );
+
+      const outPath = resolve(options.output ?? resolve(paths.scanDir, "matches.yml"));
+      await mkdir(dirname(outPath), { recursive: true });
+      await writeFile(
+        outPath,
+        yaml.dump(
+          {
+            source: network.source,
+            matched_at: new Date().toISOString(),
+            options: matchOptions,
+            counts: {
+              considered: artifact.jobs.length,
+              ranked: result.ranked.length,
+              written: top.length,
+              awaiting_description: result.needsDescription.length,
+              awaiting_discipline_review: result.needsDisciplineReview.length,
+            },
+            funnel: result.funnel,
+            // Named here rather than only printed to stderr, so a reviewer
+            // reading matches.yml later — not just whoever watched the run
+            // happen — still sees that a declared preference disagreed with
+            // career history, and what the tool did about it (nothing; it
+            // widened targeting instead of overriding the declaration).
+            preference_warnings: stalenessWarnings,
+            matches: top.map((entry) => ({
+              id: entry.job.id,
+              slug: slugs.get(entry.job.id),
+              rank: entry.rank,
+              // Same ranking with the candidate's city preference weighted
+              // back out, for sorting purely on fit and referral access.
+              rank_excluding_location: entry.rankExcludingLocation,
+              // Relative to the strongest job in this run, not an absolute
+              // fraction — `skill_coverage` and `demand_coverage` below are the
+              // literal, run-independent numbers.
+              relative_fit: entry.matchScore,
+              skill_coverage: entry.skillCoverage,
+              demand_coverage: entry.demandCoverage,
+              relative_match: entry.relativeMatch,
+              location_score: entry.locationScore,
+              title_affinity: entry.titleAffinity,
+              level_fit: entry.levelFit,
+              referral_score: entry.referralScore,
+              discipline_confirmed: entry.disciplineConfirmed,
+              company: entry.job.company_name,
+              title: entry.job.title,
+              locations: entry.job.locations,
+              url: entry.job.job_url,
+              // A role listed in several cities keeps every posting's link, so
+              // the candidate can apply to the one they actually want.
+              variant_urls: (entry.job as { variant_urls?: string[] }).variant_urls,
+              variant_count: (entry.job as { variant_count?: number }).variant_count,
+              // Set only when a merge fell back to title-only matching because
+              // a description was missing on one side — see collapseVariants.
+              merge_uncertain: (entry.job as { merge_uncertain?: boolean }).merge_uncertain,
+              matched_terms: entry.matchedTerms.slice(0, 15),
+              ask: (referrers.get(entry.job.company_id) ?? []).map((person) => ({
+                name: person.name,
+                position: person.position,
+                linkedin_url: person.linkedinUrl,
+                why: person.reasons,
+              })),
+            })),
+          },
+          { lineWidth: 100 }
+        ),
+        "utf8"
+      );
+      process.stderr.write(`Wrote ${outPath}\n`);
+
+      // Measure the funnel against jobs the candidate saved themselves, rather
+      // than trusting that it looks reasonable.
+      const exportDir = options.export;
+      if (exportDir) {
+        const { rows } = await loadExport(resolve(exportDir));
+        const saved = parseSavedJobs(rows.savedJobs);
+        // Ask the funnel what it actually kept, then explain any loss using the
+        // individual tiers. Re-deriving the decision here is what let the
+        // harness disagree with the pipeline it was supposed to be measuring.
+        const survivors = survivingJobIds(artifact.jobs, network, descriptions, matchOptions);
+        const decide = (job: Job): string | null => {
+          if (survivors.has(job.id)) return null;
+
+          const structural = structuralVerdict(job, {
+            preferences: network.preferences,
+            minLevel: matchOptions.minLevel,
+            maxLevel: matchOptions.maxLevel,
+            maxAgeDays: matchOptions.maxAgeDays,
+          });
+          if (!structural.keep) return `structural:${structural.stage}`;
+
+          const family = familyVerdict(job.title, { wanted: matchOptions.wantedFamilies });
+          if (!family.keep) return `discipline:${family.family}`;
+
+          // Survived every tier individually but not the funnel as a whole —
+          // collapse or the score threshold removed it.
+          return "collapse or score threshold";
+        };
+        process.stderr.write(`\n${formatCalibration(calibrate(saved, artifact.jobs, decide))}\n`);
+      }
+
+      process.stderr.write(
+        [
+          "",
+          `Ranked:                 ${result.ranked.length}`,
+          `  written:              ${top.length}`,
+          `  awaiting description: ${result.needsDescription.length}`,
+          `  need a model to place:${result.needsDisciplineReview.length}`,
+          "",
+        ].join("\n")
+      );
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+      process.exitCode = 1;
+    }
+  });
+
+program.parseAsync(process.argv);

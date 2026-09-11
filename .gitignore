@@ -1,9 +1,16 @@
 */resume*.pdf
 *linkedin*export*
+# ...but the network-scan test fixtures are synthetic, not a real export, and
+# the suite cannot run without them.
+!tools/test/fixtures/linkedin-export/
+!tools/test/fixtures/linkedin-export/**
 
 node_modules
 dist
 .turbo
+
+#network scan http cache
+.cache
 
 #candidate files
 candidate/*
