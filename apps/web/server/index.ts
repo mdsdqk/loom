@@ -9,6 +9,8 @@ import {
   StatusSchema,
   OutcomeSchema,
   EventStateSchema,
+  SourceSchema,
+  ReferralSchema,
   appendStatus,
   createOpportunity,
   listOpportunities,
@@ -17,6 +19,7 @@ import {
   removeEvent,
   resolveOpportunitiesRoot,
   updateEvent,
+  updateMeta,
   writeMeta,
   EventConflictError,
 } from "@loom/tools";
@@ -72,6 +75,29 @@ app.get("/api/opportunities/:slug", async (c) => {
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return c.json(fail(message(error)), 404);
     return c.json(fail(message(error)), 422);
+  }
+});
+
+/** `null` clears a field; omitted leaves it alone. */
+const MetaPatchBody = z.object({
+  company: z.string().trim().min(1).optional(),
+  role: z.string().trim().min(1).optional(),
+  source: SourceSchema.nullable().optional(),
+  referral: ReferralSchema.nullable().optional(),
+  url: z.string().trim().min(1).nullable().optional(),
+  job_id: z.string().trim().min(1).nullable().optional(),
+  posted_date: z.string().trim().min(1).nullable().optional(),
+});
+
+app.patch("/api/opportunities/:slug", async (c) => {
+  const parsed = MetaPatchBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json(fail(parsed.error.issues.map((i) => i.message).join("; ")), 400);
+  }
+  try {
+    return c.json(await updateMeta(c.req.param("slug"), parsed.data, OPPORTUNITIES_ROOT));
+  } catch (error) {
+    return c.json(fail(message(error)), 400);
   }
 });
 

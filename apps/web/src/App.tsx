@@ -11,7 +11,7 @@ import {
   type Status,
 } from "@loom/tools/opportunity/pure";
 import * as api from "./api";
-import type { EventExpectation, EventPatch, MasterResume, StatusChange } from "./api";
+import type { EventExpectation, EventPatch, MasterResume, MetaPatch, StatusChange } from "./api";
 import { Artifacts, Stages, StatusCell } from "./components/Marks";
 import { RowDetail } from "./components/RowDetail";
 import { NewOpportunity } from "./components/NewOpportunity";
@@ -119,6 +119,8 @@ export default function App() {
     mutate(slug, () => api.updateEvent(slug, index, patch));
   const dropEvent = (slug: string, index: number, expect: EventExpectation) =>
     mutate(slug, () => api.removeEvent(slug, index, expect));
+  const saveDetails = (slug: string, patch: MetaPatch) =>
+    mutate(slug, () => api.updateMeta(slug, patch));
 
   async function create(input: Parameters<typeof api.createOpportunity>[0]) {
     setCreateBusy(true);
@@ -280,8 +282,13 @@ export default function App() {
                 <span className="hidden xl:block">
                   <Artifacts present={row.opportunity.artifacts} />
                 </span>
-                <span className="caps hidden text-ink-4 xl:inline">
-                  {row.opportunity.meta.source ?? "manual"}
+                <span
+                  className="caps hidden truncate text-ink-4 xl:inline"
+                  title={row.opportunity.meta.referral?.name ?? undefined}
+                >
+                  {row.opportunity.meta.source === "referral" && row.opportunity.meta.referral
+                    ? row.opportunity.meta.referral.name
+                    : (row.opportunity.meta.source ?? "manual")}
                 </span>
               </div>
 
@@ -293,6 +300,7 @@ export default function App() {
                   onRecord={(change) => void record(slug, change)}
                   onPatch={(index, patch) => void patchEvent(slug, index, patch)}
                   onRemove={(index, expect) => void dropEvent(slug, index, expect)}
+                  onSaveDetails={(patch) => void saveDetails(slug, patch)}
                 />
               )}
             </div>

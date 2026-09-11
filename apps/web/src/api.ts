@@ -1,5 +1,7 @@
 import type {
   EventState,
+  Referral,
+  Source,
   LoomConfig,
   Opportunity,
   Outcome,
@@ -7,7 +9,7 @@ import type {
   StatusEvent,
 } from "@loom/tools";
 
-export type { EventState, LoomConfig, Opportunity, Outcome, Status, StatusEvent };
+export type { EventState, LoomConfig, Opportunity, Outcome, Referral, Source, Status, StatusEvent };
 
 export interface ListResponse {
   opportunities: Opportunity[];
@@ -93,6 +95,23 @@ export const removeEvent = (slug: string, index: number, expect: EventExpectatio
     `/api/opportunities/${encodeURIComponent(slug)}/history/${index}`,
     { method: "DELETE", body: JSON.stringify(expect) }
   );
+
+/** `null` clears a field; omitted leaves it alone. */
+export interface MetaPatch {
+  company?: string;
+  role?: string;
+  source?: Source | null;
+  referral?: Referral | null;
+  url?: string | null;
+  job_id?: string | null;
+  posted_date?: string | null;
+}
+
+export const updateMeta = (slug: string, patch: MetaPatch) =>
+  request<Opportunity>(`/api/opportunities/${encodeURIComponent(slug)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 
 export interface CreateInput {
   jd: string;

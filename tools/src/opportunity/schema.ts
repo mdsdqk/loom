@@ -135,6 +135,23 @@ export const StatusEventSchema = z
 export type StatusEvent = z.infer<typeof StatusEventSchema>;
 
 /**
+ * Who put this opportunity in front of the candidate.
+ *
+ * The fields match what a LinkedIn connection already carries in the
+ * network-scan export, so a referrer picked from there transfers without
+ * reshaping. Everything but the name is optional: often all you have is a name.
+ */
+export const ReferralSchema = z.looseObject({
+  name: z.string().min(1),
+  position: z.string().min(1).optional(),
+  linkedin_url: z.string().min(1).optional(),
+  /** How the ask went, in the candidate's own words. */
+  note: z.string().min(1).optional(),
+});
+
+export type Referral = z.infer<typeof ReferralSchema>;
+
+/**
  * Unknown top-level keys are preserved, not stripped: another tool may have
  * written a field this version does not know about, and a portal write must
  * not silently drop it.
@@ -145,6 +162,7 @@ export const OpportunityMetaSchema = z.looseObject({
   job_id: z.string().min(1).optional(),
   posted_date: YamlDate.optional(),
   source: SourceSchema.optional(),
+  referral: ReferralSchema.optional(),
   url: z.string().min(1).optional(),
   status: StatusSchema.optional(),
   history: z.array(StatusEventSchema).default([]),

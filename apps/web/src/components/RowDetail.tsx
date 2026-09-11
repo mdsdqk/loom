@@ -13,7 +13,8 @@ import {
   type StatusEvent,
 } from "@loom/tools/opportunity/pure";
 import { fmtDateTime, statusText, toLocalInput, fromLocalInput } from "../lib/view";
-import type { EventExpectation, EventPatch, StatusChange } from "../api";
+import type { EventExpectation, EventPatch, MetaPatch, StatusChange } from "../api";
+import { Details } from "./Details";
 
 /**
  * The expanded row: the recorded history on the left, the writes on the right.
@@ -40,6 +41,7 @@ export function RowDetail({
   onRecord,
   onPatch,
   onRemove,
+  onSaveDetails,
   busy,
   error,
 }: {
@@ -47,6 +49,7 @@ export function RowDetail({
   onRecord: (change: StatusChange) => void;
   onPatch: (index: number, patch: EventPatch) => void;
   onRemove: (index: number, expect: EventExpectation) => void;
+  onSaveDetails: (patch: MetaPatch) => void;
   busy: boolean;
   error?: string;
 }) {
@@ -54,7 +57,15 @@ export function RowDetail({
   const [editing, setEditing] = useState<number | null>(null);
 
   return (
-    <div className="grid gap-8 border-b border-rule bg-ground-2 px-5 py-5 lg:grid-cols-[1.25fr_1fr]">
+    <div className="border-b border-rule bg-ground-2 px-5 py-5">
+      <Details
+        opportunity={opportunity}
+        busy={busy}
+        error={error}
+        onSave={onSaveDetails}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-[1.25fr_1fr]">
       <section>
         <h3 className="caps mb-3 border-b border-rule pb-2 text-ink-3">
           History · {history.length} {history.length === 1 ? "entry" : "entries"}
@@ -152,6 +163,7 @@ export function RowDetail({
       </section>
 
       <RecordForm history={history} busy={busy} error={error} onRecord={onRecord} />
+      </div>
     </div>
   );
 }

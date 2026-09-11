@@ -11,6 +11,8 @@ import {
   type OpportunityMeta,
   type Status,
   type StatusEvent,
+  type Referral,
+  type Source,
   nextRound,
   normalizeHistory,
   validateMeta,
@@ -256,6 +258,68 @@ async function writeMetaUnlocked(
     await unlink(temp).catch(() => {});
     throw error;
   }
+}
+
+/**
+ * The opportunity's own fields, as opposed to its history.
+ *
+ * `null` clears a field. History, and the status derived from it, are not
+ * reachable here: they change through the status functions and nowhere else.
+ */
+export interface MetaPatch {
+  company?: string;
+  role?: string;
+  source?: Source | null;
+  referral?: Referral | null;
+  url?: string | null;
+  job_id?: string | null;
+  posted_date?: string | null;
+}
+
+export async function updateMeta(
+  slug: string,
+  patch: MetaPatch,
+  root?: string
+): Promise<Opportunity> {
+  return serialize(opportunityPaths(slug, root).meta, async () => {
+    const existing = await readOpportunity(slug, root);
+    const meta: OpportunityMeta = { ...existing.meta };
+
+    if (patch.company !== undefined) {
+      const company = patch.company.trim();
+      if (!company) throw new Error("company cannot be empty");
+      meta.company = company;
+    }
+    if (patch.role !== undefined) {
+      const role = patch.role.trim();
+      if (!role) throw new Error("role cannot be empty");
+      meta.role = role;
+    }
+
+    if (patch.source !== undefined) {
+      if (patch.source === null) delete meta.source;
+      else meta.source = patch.source;
+    }
+
+    for (const key of ["url", "job_id", "posted_date"] as const) {
+      const value = patch[key];
+      if (value === undefined) continue;
+      if (value === null || value.trim() === "") delete meta[key];
+      else meta[key] = value.trim();
+    }
+
+    if (patch.referral !== undefined) {
+      if (patch.referral === null || !patch.referral.name?.trim()) delete meta.referral;
+      else meta.referral = patch.referral;
+    }
+
+    /* A referrer recorded against a source that is not a referral is a
+       contradiction the file should not carry. */
+    if (meta.source !== "referral") delete meta.referral;
+
+    await writeMetaUnlocked(slug, meta, root);
+    return { ...existing, meta, issues: [] };
+  });
 }
 
 export interface AppendStatusInput {
