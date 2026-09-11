@@ -22,6 +22,7 @@ import {
   rounds,
   scheduledEvents,
 } from "../../src/opportunity/derive.js";
+import { validateMeta } from "../../src/opportunity/schema.js";
 
 /**
  * Backdating, editing and scheduling.
@@ -335,7 +336,7 @@ describe("the cached status tracks what happened, not what is booked", () => {
     expect(currentStatus(opp.meta)).toBe("interviewing");
   });
 
-  it("still reports a genuinely stale cache", async () => {
+  it("corrects a genuinely stale cache on read, and validateMeta still reports it", async () => {
     await seed(
       [
         "status: offer",
@@ -347,7 +348,18 @@ describe("the cached status tracks what happened, not what is booked", () => {
     );
 
     const opp = await readOpportunity(SLUG, root);
-    expect(opp.issues.join()).toMatch(/disagrees with the furthest entry "screening"/);
+    expect(opp.meta.status).toBe("screening");
+    expect(opp.issues).toEqual([]);
+
+    const raw = validateMeta({
+      company: "A",
+      role: "R",
+      status: "offer",
+      history: [{ at: "2026-09-01T09:00:00Z", status: "screening", state: "recorded" }],
+    });
+    expect(raw.issues.map((i) => i.message).join()).toMatch(
+      /disagrees with the furthest entry "screening"/
+    );
   });
 
   it("caches the latest entry in time after a backdated write, not the last appended", async () => {

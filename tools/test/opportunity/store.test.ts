@@ -128,7 +128,7 @@ describe("reading", () => {
     expect(reread.salary_band).toBe("L5");
   });
 
-  it("reports a status cache that disagrees with history rather than throwing", async () => {
+  it("corrects a status cache that disagrees with history rather than throwing", async () => {
     await makeOpportunity(
       "drifted",
       [
@@ -142,8 +142,11 @@ describe("reading", () => {
     );
 
     const opp = await readOpportunity("drifted", root);
-    expect(opp.issues.join()).toContain("disagrees");
+    /* The cache is a denormalization, so the read recomputes it and says
+       nothing; `validateMeta` still reports it for a file checked as-is. */
     expect(currentStatus(opp.meta)).toBe("applied");
+    expect(opp.meta.status).toBe("applied");
+    expect(opp.issues).toEqual([]);
   });
 
   it("skips directories with no meta.yml and survives one unreadable file", async () => {
