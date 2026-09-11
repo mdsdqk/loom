@@ -62,7 +62,9 @@ export {
   OPPORTUNITIES_DIR_ENV,
   DEFAULT_OPPORTUNITIES_DIR,
   resolveOpportunitiesRoot,
+  assertSafeSlug,
   opportunityPaths,
+  EventConflictError,
   readOpportunity,
   listOpportunities,
   writeMeta,
@@ -85,4 +87,5 @@ export {
   type OpportunityPaths,
   type AppendStatusInput,
   type UpdateEventInput,
+  type EventExpectation,
 } from "./store.js";

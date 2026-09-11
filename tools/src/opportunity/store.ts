@@ -1,6 +1,7 @@
+import { randomBytes } from "node:crypto";
 import type { Dirent } from "node:fs";
 import { readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { relative, resolve, isAbsolute } from "node:path";
 import { load } from "js-yaml";
 import { stringify } from "yaml";
 import {
@@ -42,8 +43,30 @@ export interface OpportunityPaths {
   resume: string;
 }
 
+/**
+ * A slug names one directory directly under the opportunities root.
+ *
+ * The web API takes it straight off the URL, so `..` segments and absolute
+ * paths have to be refused here rather than trusted. On Windows an absolute
+ * slug would otherwise discard the root entirely and address any file on disk.
+ */
+export function assertSafeSlug(slug: string, root: string): string {
+  if (!slug || slug === "." || slug === "..") {
+    throw new Error(`Invalid opportunity slug: ${JSON.stringify(slug)}`);
+  }
+  if (isAbsolute(slug) || /[\\/]/.test(slug)) {
+    throw new Error(`Opportunity slug must be a single directory name: ${JSON.stringify(slug)}`);
+  }
+  const dir = resolve(root, slug);
+  const rel = relative(root, dir);
+  if (rel !== slug || rel.startsWith("..")) {
+    throw new Error(`Opportunity slug escapes the opportunities directory: ${JSON.stringify(slug)}`);
+  }
+  return dir;
+}
+
 export function opportunityPaths(slug: string, root?: string): OpportunityPaths {
-  const dir = resolve(resolveOpportunitiesRoot(root), slug);
+  const dir = assertSafeSlug(slug, resolveOpportunitiesRoot(root));
   const artifactsDir = resolve(dir, "artifacts");
   return {
     dir,
@@ -113,8 +136,19 @@ export async function readOpportunity(slug: string, root?: string): Promise<Oppo
   const meta = result.meta;
   if (meta.history.length === 0 && !hasHistoryKey) {
     meta.history = await synthesizeHistory(paths.dir);
-    meta.status = meta.history[0].status;
   }
+
+  /*
+   * Normalize what was read, not just what is about to be written. A
+   * hand-edited file that has never been saved through this store could
+   * otherwise report the wrong status and idle time, because every derivation
+   * takes the last recorded element in file order. `validateMeta` has already
+   * recorded the disorder as an issue, so the file's state is still reported.
+   */
+  meta.history = normalizeHistory(meta.history);
+  const derived = currentStatus(meta);
+  if (derived) meta.status = derived;
+  else delete meta.status;
 
   return {
     slug,
@@ -160,11 +194,40 @@ export async function listOpportunities(
 }
 
 /**
+ * Serializes work per opportunity file.
+ *
+ * Rename makes one write replace the file atomically, but read-modify-write is
+ * three steps. Two overlapping status posts both read the same history and the
+ * later rename wins, losing an entry. Every mutation runs through this chain so
+ * that cannot happen inside one process. Two processes writing the same file
+ * concurrently is still unhandled; this is a single-user local tool.
+ */
+const writeQueues = new Map<string, Promise<unknown>>();
+
+function serialize<T>(key: string, work: () => Promise<T>): Promise<T> {
+  const previous = writeQueues.get(key) ?? Promise.resolve();
+  const next = previous.then(work, work);
+  writeQueues.set(
+    key,
+    next.catch(() => undefined)
+  );
+  return next;
+}
+
+/**
  * Writes `meta.yml` through a temp file in the same directory, then renames.
  * These files are gitignored, so a half-written meta.yml has no undo; rename is
  * atomic on the same filesystem and a crash leaves the previous file intact.
  */
 export async function writeMeta(
+  slug: string,
+  meta: OpportunityMeta,
+  root?: string
+): Promise<void> {
+  return serialize(opportunityPaths(slug, root).meta, () => writeMetaUnlocked(slug, meta, root));
+}
+
+async function writeMetaUnlocked(
   slug: string,
   meta: OpportunityMeta,
   root?: string
@@ -179,13 +242,13 @@ export async function writeMeta(
    * the opportunity's status.
    */
   const history = normalizeHistory(meta.history);
-  const withCache: OpportunityMeta = {
-    ...meta,
-    history,
-    status: currentStatus({ ...meta, history }) ?? meta.status,
-  };
+  const withCache: OpportunityMeta = { ...meta, history };
+  const derived = currentStatus(withCache);
+  if (derived) withCache.status = derived;
+  else delete withCache.status;
 
-  const temp = `${paths.meta}.${process.pid}.tmp`;
+  /* A shared temp name lets two concurrent writers interleave into one file. */
+  const temp = `${paths.meta}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
   await writeFile(temp, stringify(withCache), "utf8");
   try {
     await rename(temp, paths.meta);
@@ -232,6 +295,14 @@ export async function appendStatus(
   input: AppendStatusInput,
   root?: string
 ): Promise<Opportunity> {
+  return serialize(opportunityPaths(slug, root).meta, () => appendStatusUnlocked(slug, input, root));
+}
+
+async function appendStatusUnlocked(
+  slug: string,
+  input: AppendStatusInput,
+  root?: string
+): Promise<Opportunity> {
   const existing = await readOpportunity(slug, root);
   const history = [...existing.meta.history];
 
@@ -260,6 +331,21 @@ export async function appendStatus(
   return persist(slug, existing, history, root);
 }
 
+/**
+ * What the caller believed the entry was.
+ *
+ * History is addressed by position, and position is not identity: a concurrent
+ * write re-sorts the list, so an index captured when the row was rendered can
+ * point at a different entry by the time the patch lands. Two tabs open on one
+ * opportunity is enough to hit it. When the caller states what it expected to
+ * find, a moved entry is a visible conflict instead of a silent edit of the
+ * wrong row.
+ */
+export interface EventExpectation {
+  at?: string;
+  status?: Status;
+}
+
 export interface UpdateEventInput {
   status?: Status;
   at?: Date | string;
@@ -285,7 +371,46 @@ export async function updateEvent(
   slug: string,
   index: number,
   patch: UpdateEventInput,
-  root?: string
+  root?: string,
+  expect?: EventExpectation
+): Promise<Opportunity> {
+  return serialize(opportunityPaths(slug, root).meta, () =>
+    updateEventUnlocked(slug, index, patch, root, expect)
+  );
+}
+
+export class EventConflictError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "EventConflictError";
+  }
+}
+
+function assertExpected(
+  event: StatusEvent | undefined,
+  index: number,
+  expect?: EventExpectation
+): asserts event is StatusEvent {
+  if (!event) throw new Error(`No history entry at index ${index}`);
+  if (!expect) return;
+  if (expect.at !== undefined && event.at !== expect.at) {
+    throw new EventConflictError(
+      `History entry ${index} has moved: expected ${expect.at}, found ${event.at}`
+    );
+  }
+  if (expect.status !== undefined && event.status !== expect.status) {
+    throw new EventConflictError(
+      `History entry ${index} has changed: expected ${expect.status}, found ${event.status}`
+    );
+  }
+}
+
+async function updateEventUnlocked(
+  slug: string,
+  index: number,
+  patch: UpdateEventInput,
+  root?: string,
+  expect?: EventExpectation
 ): Promise<Opportunity> {
   const existing = await readOpportunity(slug, root);
   const history = [...existing.meta.history];
@@ -293,6 +418,7 @@ export async function updateEvent(
   if (!Number.isInteger(index) || index < 0 || index >= history.length) {
     throw new Error(`No history entry at index ${index}`);
   }
+  assertExpected(history[index], index, expect);
 
   const before = history[index];
   const next: StatusEvent = { ...before };
@@ -335,15 +461,19 @@ export async function updateEvent(
 export async function removeEvent(
   slug: string,
   index: number,
-  root?: string
+  root?: string,
+  expect?: EventExpectation
 ): Promise<Opportunity> {
-  const existing = await readOpportunity(slug, root);
-  const history = [...existing.meta.history];
-  if (!Number.isInteger(index) || index < 0 || index >= history.length) {
-    throw new Error(`No history entry at index ${index}`);
-  }
-  history.splice(index, 1);
-  return persist(slug, existing, history, root);
+  return serialize(opportunityPaths(slug, root).meta, async () => {
+    const existing = await readOpportunity(slug, root);
+    const history = [...existing.meta.history];
+    if (!Number.isInteger(index) || index < 0 || index >= history.length) {
+      throw new Error(`No history entry at index ${index}`);
+    }
+    assertExpected(history[index], index, expect);
+    history.splice(index, 1);
+    return persist(slug, existing, history, root);
+  });
 }
 
 async function persist(
@@ -353,12 +483,12 @@ async function persist(
   root?: string
 ): Promise<Opportunity> {
   const sorted = normalizeHistory(history);
-  const meta: OpportunityMeta = {
-    ...existing.meta,
-    history: sorted,
-    status: currentStatus({ ...existing.meta, history: sorted }),
-  };
-  await writeMeta(slug, meta, root);
+  const meta: OpportunityMeta = { ...existing.meta, history: sorted };
+  const derived = currentStatus(meta);
+  if (derived) meta.status = derived;
+  else delete meta.status;
+
+  await writeMetaUnlocked(slug, meta, root);
   return { ...existing, meta, issues: [] };
 }
 

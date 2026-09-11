@@ -56,14 +56,22 @@ export function statusIndex(status: Status): number {
  * file may carry a plain string. Both normalize to an ISO string here so the
  * rest of the system only ever sees one shape.
  */
-const IsoTimestamp = z.preprocess((value) => {
-  if (value instanceof Date) return value.toISOString();
-  if (typeof value === "string") {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
-  }
-  return value;
-}, z.string().min(1));
+const IsoTimestamp = z.preprocess(
+  (value) => {
+    if (value instanceof Date) return Number.isNaN(value.getTime()) ? value : value.toISOString();
+    if (typeof value === "string") {
+      const parsed = new Date(value);
+      if (!Number.isNaN(parsed.getTime())) return parsed.toISOString();
+    }
+    return value;
+  },
+  z
+    .string()
+    .min(1)
+    .refine((value) => !Number.isNaN(new Date(value).getTime()), {
+      message: "must be a date this can parse",
+    })
+);
 
 /**
  * A bare `2026-08-14` in YAML parses to a `Date`, not a string — which is what
@@ -90,7 +98,7 @@ export const EventStateSchema = z.enum(EVENT_STATES);
 export type EventState = (typeof EVENT_STATES)[number];
 
 export const StatusEventSchema = z
-  .object({
+  .looseObject({
     /**
      * For a recorded entry, when it happened. For a scheduled one, when it was
      * put on the calendar — `eta` carries when it is expected, because a real
@@ -188,6 +196,13 @@ export function validateMeta(data: unknown): MetaValidationResult {
     issues.push({
       path: "status",
       message: `cached status "${meta.status}" disagrees with the last recorded entry "${last.status}"`,
+    });
+  }
+
+  if (!last && meta.status) {
+    issues.push({
+      path: "status",
+      message: `cached status "${meta.status}" has no recorded entry behind it`,
     });
   }
 

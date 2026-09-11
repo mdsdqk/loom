@@ -13,7 +13,7 @@ import {
   type StatusEvent,
 } from "@loom/tools/opportunity/pure";
 import { fmtDateTime, statusText, toLocalInput, fromLocalInput } from "../lib/view";
-import type { EventPatch, StatusChange } from "../api";
+import type { EventExpectation, EventPatch, StatusChange } from "../api";
 
 /**
  * The expanded row: the recorded history on the left, the writes on the right.
@@ -46,7 +46,7 @@ export function RowDetail({
   opportunity: Opportunity;
   onRecord: (change: StatusChange) => void;
   onPatch: (index: number, patch: EventPatch) => void;
-  onRemove: (index: number) => void;
+  onRemove: (index: number, expect: EventExpectation) => void;
   busy: boolean;
   error?: string;
 }) {
@@ -72,7 +72,7 @@ export function RowDetail({
                     setEditing(null);
                   }}
                   onRemove={() => {
-                    onRemove(i);
+                    onRemove(i, { expect_at: event.at, expect_status: event.status });
                     setEditing(null);
                   }}
                 />
@@ -126,7 +126,12 @@ export function RowDetail({
                       className={MINI}
                       disabled={busy}
                       onClick={() =>
-                        onPatch(i, { state: "recorded", at: new Date().toISOString() })
+                        onPatch(i, {
+                          state: "recorded",
+                          at: new Date().toISOString(),
+                          expect_at: event.at,
+                          expect_status: event.status,
+                        })
                       }
                     >
                       Mark done
@@ -213,7 +218,8 @@ function EditEntry({
   onRemove: () => void;
 }) {
   const [status, setStatus] = useState<Status>(event.status);
-  const [at, setAt] = useState(toLocalInput(event.at));
+  const originalAt = toLocalInput(event.at);
+  const [at, setAt] = useState(originalAt);
   const [label, setLabel] = useState(event.label ?? "");
   const [note, setNote] = useState(event.note ?? "");
   const [eta, setEta] = useState(event.eta ?? "");
@@ -282,11 +288,15 @@ function EditEntry({
           onClick={() =>
             onSave({
               status,
-              at: fromLocalInput(at),
+              /* Sending `at` unconditionally would drop the seconds the input
+                 cannot show, and an emptied field would silently stamp now. */
+              ...(at && at !== originalAt ? { at: fromLocalInput(at) } : {}),
               state,
               label: label.trim() || null,
               note: note.trim() || null,
               eta: ahead ? eta.trim() || null : null,
+              expect_at: event.at,
+              expect_status: event.status,
             })
           }
         >

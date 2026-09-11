@@ -1,6 +1,6 @@
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
@@ -18,6 +18,7 @@ import {
   resolveOpportunitiesRoot,
   updateEvent,
   writeMeta,
+  EventConflictError,
 } from "@loom/tools";
 
 /**
@@ -45,6 +46,12 @@ const app = new Hono();
 
 const fail = (message: string) => ({ error: message }) as const;
 
+const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+/** A bad slug is the caller's fault, not a missing opportunity. */
+const isBadRequest = (error: unknown) =>
+  error instanceof Error && /slug/i.test(error.message);
+
 app.get("/api/config", async (c) => c.json(await loadConfig(CONFIG_PATH)));
 
 app.get("/api/opportunities", async (c) => {
@@ -59,7 +66,12 @@ app.get("/api/opportunities/:slug", async (c) => {
   try {
     return c.json(await readOpportunity(c.req.param("slug"), OPPORTUNITIES_ROOT));
   } catch (error) {
-    return c.json(fail(error instanceof Error ? error.message : String(error)), 404);
+    if (isBadRequest(error)) return c.json(fail(message(error)), 400);
+    /* Only an absent file is a 404. Unreadable or malformed is not the same
+       thing as missing, and reporting it as missing hides the real problem. */
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return c.json(fail(message(error)), 404);
+    return c.json(fail(message(error)), 422);
   }
 });
 
@@ -75,8 +87,18 @@ const AppendStatusBody = z.object({
   eta: z.string().trim().min(1).optional(),
 });
 
+/**
+ * What the client believed it was addressing. History is addressed by position,
+ * and a concurrent write re-sorts the list, so without this a stale index edits
+ * whatever entry happens to sit there now.
+ */
+const ExpectBody = z.object({
+  expect_at: z.string().min(1).optional(),
+  expect_status: StatusSchema.optional(),
+});
+
 /** `null` clears a field; omitted leaves it alone. */
-const UpdateEventBody = z.object({
+const UpdateEventBody = ExpectBody.extend({
   status: StatusSchema.optional(),
   at: z.string().min(1).optional(),
   state: EventStateSchema.optional(),
@@ -96,7 +118,7 @@ app.post("/api/opportunities/:slug/status", async (c) => {
     const updated = await appendStatus(c.req.param("slug"), parsed.data, OPPORTUNITIES_ROOT);
     return c.json(updated);
   } catch (error) {
-    return c.json(fail(error instanceof Error ? error.message : String(error)), 400);
+    return c.json(fail(message(error)), 400);
   }
 });
 
@@ -106,19 +128,33 @@ app.patch("/api/opportunities/:slug/history/:index", async (c) => {
   if (!parsed.success) {
     return c.json(fail(parsed.error.issues.map((i) => i.message).join("; ")), 400);
   }
+  const { expect_at, expect_status, ...patch } = parsed.data;
   try {
-    return c.json(await updateEvent(c.req.param("slug"), index, parsed.data, OPPORTUNITIES_ROOT));
+    const updated = await updateEvent(
+      c.req.param("slug"),
+      index,
+      patch,
+      OPPORTUNITIES_ROOT,
+      { at: expect_at, status: expect_status }
+    );
+    return c.json(updated);
   } catch (error) {
-    return c.json(fail(error instanceof Error ? error.message : String(error)), 400);
+    if (error instanceof EventConflictError) return c.json(fail(message(error)), 409);
+    return c.json(fail(message(error)), 400);
   }
 });
 
 app.delete("/api/opportunities/:slug/history/:index", async (c) => {
   const index = Number(c.req.param("index"));
+  const parsed = ExpectBody.safeParse(await c.req.json().catch(() => ({})));
+  const expect = parsed.success
+    ? { at: parsed.data.expect_at, status: parsed.data.expect_status }
+    : undefined;
   try {
-    return c.json(await removeEvent(c.req.param("slug"), index, OPPORTUNITIES_ROOT));
+    return c.json(await removeEvent(c.req.param("slug"), index, OPPORTUNITIES_ROOT, expect));
   } catch (error) {
-    return c.json(fail(error instanceof Error ? error.message : String(error)), 400);
+    if (error instanceof EventConflictError) return c.json(fail(message(error)), 409);
+    return c.json(fail(message(error)), 400);
   }
 });
 
@@ -162,12 +198,23 @@ app.post("/api/opportunities", async (c) => {
   }
   const body = parsed.data;
 
+  /*
+   * The client only ever offers names this server listed, but the endpoint is
+   * reachable directly. Without this check any readable file on disk could be
+   * named here and would be copied into the new opportunity.
+   */
+  const masterResumePath = resolve(body.masterResumePath);
+  const withinCandidate = relative(CANDIDATE_ROOT, masterResumePath);
+  if (withinCandidate.startsWith("..") || isAbsolute(withinCandidate)) {
+    return c.json(fail("masterResumePath must be inside the candidate directory"), 400);
+  }
+
   const staging = await mkdtemp(join(tmpdir(), "loom-jd-"));
   const jdPath = join(staging, "jd.md");
   try {
     await writeFile(jdPath, body.jd, "utf8");
     const created = await createOpportunity({
-      masterResumePath: resolve(body.masterResumePath),
+      masterResumePath,
       jdPath,
       opportunitiesRoot: OPPORTUNITIES_ROOT,
       company: body.company,
@@ -191,12 +238,16 @@ app.post("/api/opportunities", async (c) => {
 
     return c.json({ ...fresh, meta, created }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json(fail(message), message.includes("already exists") ? 409 : 400);
+    const text = message(error);
+    return c.json(fail(text), text.includes("already exists") ? 409 : 400);
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
 });
+
+/* An unmatched API path is a 404 in JSON. Without this the SPA catch-all below
+   answers it with index.html and a 200, which reads as success to any client. */
+app.all("/api/*", (c) => c.json(fail("No such endpoint"), 404));
 
 /* The built client, when running as one process rather than under Vite. */
 app.use("/*", serveStatic({ root: "./dist/client" }));

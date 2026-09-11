@@ -11,7 +11,7 @@ import {
   type Status,
 } from "@loom/tools/opportunity/pure";
 import * as api from "./api";
-import type { EventPatch, MasterResume, StatusChange } from "./api";
+import type { EventExpectation, EventPatch, MasterResume, StatusChange } from "./api";
 import { Artifacts, Stages, StatusCell } from "./components/Marks";
 import { RowDetail } from "./components/RowDetail";
 import { NewOpportunity } from "./components/NewOpportunity";
@@ -117,8 +117,8 @@ export default function App() {
     mutate(slug, () => api.changeStatus(slug, change));
   const patchEvent = (slug: string, index: number, patch: EventPatch) =>
     mutate(slug, () => api.updateEvent(slug, index, patch));
-  const dropEvent = (slug: string, index: number) =>
-    mutate(slug, () => api.removeEvent(slug, index));
+  const dropEvent = (slug: string, index: number, expect: EventExpectation) =>
+    mutate(slug, () => api.removeEvent(slug, index, expect));
 
   async function create(input: Parameters<typeof api.createOpportunity>[0]) {
     setCreateBusy(true);
@@ -292,7 +292,7 @@ export default function App() {
                   error={rowError[slug] || undefined}
                   onRecord={(change) => void record(slug, change)}
                   onPatch={(index, patch) => void patchEvent(slug, index, patch)}
-                  onRemove={(index) => void dropEvent(slug, index)}
+                  onRemove={(index, expect) => void dropEvent(slug, index, expect)}
                 />
               )}
             </div>

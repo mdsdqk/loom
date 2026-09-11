@@ -47,8 +47,15 @@ export function currentEvent(meta: OpportunityMeta): StatusEvent | undefined {
   return recorded[recorded.length - 1];
 }
 
+/**
+ * The status is whatever the last recorded entry says, and nothing else.
+ *
+ * Falling back to the stored `status` let a stale cache outlive the entry that
+ * justified it: delete the only recorded entry and the opportunity kept
+ * reporting the old status while the row rendered as unknown.
+ */
 export function currentStatus(meta: OpportunityMeta): Status | undefined {
-  return currentEvent(meta)?.status ?? meta.status;
+  return currentEvent(meta)?.status;
 }
 
 /** The next booked slot, when one exists. */

@@ -52,7 +52,13 @@ export interface StatusChange {
   eta?: string;
 }
 
-/** `null` clears a field; omitted leaves it as it is. */
+/**
+ * `null` clears a field; omitted leaves it as it is.
+ *
+ * `expect_at` and `expect_status` say what the caller thought sat at that index.
+ * History is addressed by position and a concurrent write re-sorts it, so
+ * without them a stale index would edit whatever entry is there now.
+ */
 export interface EventPatch {
   status?: Status;
   at?: string;
@@ -61,6 +67,13 @@ export interface EventPatch {
   note?: string | null;
   eta?: string | null;
   outcome?: Outcome | null;
+  expect_at?: string;
+  expect_status?: Status;
+}
+
+export interface EventExpectation {
+  expect_at?: string;
+  expect_status?: Status;
 }
 
 export const changeStatus = (slug: string, change: StatusChange) =>
@@ -75,10 +88,10 @@ export const updateEvent = (slug: string, index: number, patch: EventPatch) =>
     { method: "PATCH", body: JSON.stringify(patch) }
   );
 
-export const removeEvent = (slug: string, index: number) =>
+export const removeEvent = (slug: string, index: number, expect: EventExpectation = {}) =>
   request<Opportunity>(
     `/api/opportunities/${encodeURIComponent(slug)}/history/${index}`,
-    { method: "DELETE" }
+    { method: "DELETE", body: JSON.stringify(expect) }
   );
 
 export interface CreateInput {
