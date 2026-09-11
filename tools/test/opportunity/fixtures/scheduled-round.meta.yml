@@ -1,0 +1,58 @@
+# Stub opportunity: an application mid-loop with a round booked but not yet done.
+#
+# Modelled on the shape of a real in-flight application — applied, one screening
+# pass, one interview round done, and a coding round committed to with only a
+# window to go on. The company, role and dates are invented; no real employer or
+# application detail appears here.
+#
+# What this fixture is for:
+#   - the current status is `interviewing`, not the scheduled round's status
+#   - the idle clock runs from the last *recorded* entry (2026-09-04), so a long
+#     wait for a booked round still reads as a wait
+#   - `eta` is freeform and survives verbatim
+#   - round numbering counts the scheduled round as round 3
+
+company: Northwind Systems
+role: Agentic System Architect
+job_id: NW-4471
+posted_date: 2026-08-12
+source: manual
+status: interviewing
+
+history:
+  - at: 2026-08-18T09:12:00Z
+    status: scouted
+    state: recorded
+
+  - at: 2026-08-19T14:40:00Z
+    status: applied
+    state: recorded
+    note: submitted through the company careers page
+
+  - at: 2026-08-26T11:05:00Z
+    status: screening
+    state: recorded
+    round: 1
+    label: recruiter call
+
+  - at: 2026-09-04T06:30:00Z
+    status: interviewing
+    state: recorded
+    round: 1
+    label: hiring manager conversation
+
+  # Booked, not done. Completing this by hand sets `state: recorded` and replaces
+  # `at` with when it actually happened.
+  - at: 2026-09-09T10:00:00Z
+    status: interviewing
+    state: scheduled
+    round: 2
+    eta: within 72 hrs
+    label: functional assessment - coding round
+
+  - at: 2026-09-10T08:00:00Z
+    status: interviewing
+    state: scheduled
+    round: 3
+    eta: TBD, likely the week after the assessment
+    label: architecture panel

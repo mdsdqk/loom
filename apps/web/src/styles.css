@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/*
+ * THESIS: an opportunity tracker as a chart recorder. The pen has already
+ * passed, so the record cannot be rewritten — the same property the PRD asks of
+ * application history. No colored status pills, no card grid, no funnel.
+ *
+ * OWN-WORLD: cold graphite ground ruled by an oxide-red printed grid at low
+ * alpha. One chalk ink carries the interface. Exactly two colors mean anything
+ * and both are reserved — oxide for attention and adverse outcomes, green for
+ * favourable — validated together against the ground for lightness, chroma,
+ * CVD separation, normal-vision separation and contrast. Status is a mark and a
+ * position, never a hue.
+ */
+
+@theme {
+  --color-ground: #0e1113;
+  --color-ground-2: #12171a;
+  --color-ground-3: #171d20;
+
+  --color-ink: #e9e5dd;
+  --color-ink-2: #a2aaab;
+  --color-ink-3: #7e8789;
+  --color-ink-4: #767f81;
+  --color-mark: #5c6466;
+
+  --color-oxide: #d2612f;
+  --color-good: #4fa97e;
+
+  --color-rule: rgb(233 229 221 / 0.1);
+  --color-rule-strong: rgb(233 229 221 / 0.2);
+  --color-grid: rgb(210 97 47 / 0.11);
+  --color-grid-major: rgb(210 97 47 / 0.2);
+
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Azeret Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --ease-recorder: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-oxide);
+    color: #100b07;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-oxide);
+    outline-offset: 2px;
+  }
+
+  /* the parts we did not draw still carry the design */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-mark) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--color-mark);
+    border: 3px solid var(--color-ground);
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-3);
+  }
+}
+
+@utility caps {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* the perforated margin rail: a recorder's time margin, at fixed pitch */
+@utility rail-ticks {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 8px,
+    var(--color-grid) 8px,
+    var(--color-grid) 9px
+  );
+}
+
+@utility plot-grid {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-grid) 0,
+    var(--color-grid) 1px,
+    transparent 1px,
+    transparent calc(100% / 12)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

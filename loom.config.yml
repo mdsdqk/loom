@@ -1,0 +1,19 @@
+# Loom portal configuration.
+#
+# Not candidate data — this is how one person wants their own search measured.
+# Every value below is the default; delete the file entirely and nothing
+# changes. Restart the API after editing.
+
+# Days without movement before an opportunity counts as stalled.
+stall_threshold_days: 14
+
+# Per-status overrides. A silent recruiter and a silent interview loop are not
+# the same kind of silence, so they can have different patience.
+stall_threshold_days_by_status: {}
+#   scouted: 30
+#   interviewing: 7
+
+# Statuses where sitting still is the expected state, not a problem.
+never_stall:
+  - offer
+  - closed
