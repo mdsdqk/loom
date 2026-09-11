@@ -101,7 +101,7 @@ export interface Classification {
  * separators, the hyphenated spelling missed every engineering pattern, fell
  * through to `ambiguous`, and was then ranked below its identical twin.
  */
-function foldSeparators(title: string): string {
+export function foldSeparators(title: string): string {
   return title.replace(/[-_/]+/g, " ").replace(/\s+/g, " ");
 }
 

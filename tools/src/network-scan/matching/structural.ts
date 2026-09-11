@@ -109,6 +109,33 @@ const ALIAS_LOOKUP = new Map<string, string[]>(
 const LOCATION_COUNT = /^\s*\d+\s+locations?\s*$/i;
 
 /**
+ * Index of the first preference a job's named locations satisfy, or -1.
+ *
+ * Shared by `locationCompatible` (which only cares whether this is -1) and
+ * `locationScore` (which cares *which* preference matched, so a candidate's
+ * first choice can outrank their fourth). One alias table, one matching rule,
+ * used both to gate and to rank — duplicating it was how the two would have
+ * quietly drifted apart.
+ */
+function matchedPreferenceIndex(job: Job, preferences: CandidatePreferences): number {
+  if (job.locations.length === 0) return -1;
+
+  // A posting that only says how many locations it spans names none of them.
+  const named = job.locations.filter((location) => !LOCATION_COUNT.test(location));
+  if (named.length === 0) return -1;
+
+  const places = tokens(named.join(" "));
+  return preferences.locations.findIndex((wanted) => {
+    const parts = normalize(wanted).split(" ").filter(Boolean);
+    if (parts.length === 0) return false;
+    return parts.every((part) => {
+      const aliases = ALIAS_LOOKUP.get(part);
+      return aliases ? aliases.some((alias) => places.has(alias)) : places.has(part);
+    });
+  });
+}
+
+/**
  * Whether a job's location is compatible with the candidate's.
  *
  * Unknown locations are kept: the provider not reporting one is not evidence
@@ -121,19 +148,93 @@ export function locationCompatible(job: Job, preferences: CandidatePreferences):
   if (job.remote) return true;
   if (job.locations.length === 0) return true;
 
-  // A posting that only says how many locations it spans names none of them.
   const named = job.locations.filter((location) => !LOCATION_COUNT.test(location));
   if (named.length === 0) return true;
 
-  const places = tokens(named.join(" "));
-  return preferences.locations.some((wanted) => {
-    const parts = normalize(wanted).split(" ").filter(Boolean);
-    if (parts.length === 0) return false;
-    return parts.every((part) => {
-      const aliases = ALIAS_LOOKUP.get(part);
-      return aliases ? aliases.some((alias) => places.has(alias)) : places.has(part);
-    });
-  });
+  return matchedPreferenceIndex(job, preferences) >= 0;
+}
+
+/** The job's first-listed preference matches perfectly; scores taper from there. */
+const TOP_PREFERENCE_SCORE = 1;
+/** How much each step down the candidate's preference order costs. */
+const PREFERENCE_STEP = 0.15;
+/** A named preference never scores below this, however far down the list it sits. */
+const MIN_PREFERENCE_SCORE = 0.4;
+/** Remote work is compatible with any preference but endorses none of them. */
+const REMOTE_LOCATION_SCORE = 0.6;
+/** The provider not reporting a location is not evidence against the job. */
+const UNKNOWN_LOCATION_SCORE = 0.3;
+/** Reachable only when `locationCompatible` would already have rejected the job. */
+const NOT_WANTED_LOCATION_SCORE = 0.1;
+
+/**
+ * How well a job's location matches the candidate's stated preference order.
+ *
+ * Location used to be a pure gate: a job either passed `locationCompatible`
+ * or it didn't, and every survivor counted the same in ranking. That silently
+ * discarded the order a candidate gives their own preferences in — someone
+ * who lists `Bengaluru, Dubai, Mumbai, Europe` is not indifferent between
+ * them, but a Bengaluru posting and a Mumbai one came out identically ranked.
+ *
+ * Remote and unknown are both deliberately non-zero and deliberately not
+ * equal to a matched preference: remote is a real, flexible option (scored
+ * above unknown) but endorses no particular city, while an unreported
+ * location is simply missing information, not a mismatch.
+ */
+export function locationScore(job: Job, preferences: CandidatePreferences): number {
+  if (preferences.locations.length === 0) return 1;
+
+  const index = matchedPreferenceIndex(job, preferences);
+  if (index >= 0) {
+    return Number(
+      Math.max(MIN_PREFERENCE_SCORE, TOP_PREFERENCE_SCORE - index * PREFERENCE_STEP).toFixed(4)
+    );
+  }
+
+  if (job.remote) return REMOTE_LOCATION_SCORE;
+
+  const named = job.locations.filter((location) => !LOCATION_COUNT.test(location));
+  if (job.locations.length === 0 || named.length === 0) return UNKNOWN_LOCATION_SCORE;
+
+  return NOT_WANTED_LOCATION_SCORE;
+}
+
+/** Same level, or a step up — the strongest match. Promotion is normal, and a stretch role is a real target. */
+const LEVEL_FIT_BEST = 1;
+/** One step below current — titles are noisy across companies, and a lateral move is real. */
+const LEVEL_FIT_ONE_BELOW = 0.5;
+/** Two or more steps below current — the case that actually matters: a mid-level posting for a senior candidate. */
+const LEVEL_FIT_FAR_BELOW = 0.15;
+/** More than one step above current — reachable deliberately via `--max-level`, so reduced rather than zeroed. */
+const LEVEL_FIT_FAR_ABOVE = 0.6;
+
+/**
+ * How well a job's seniority matches the candidate's current one.
+ *
+ * This is the piece that actually fixes a stale declared title, and it works
+ * by putting the comparison on the *job* rather than on what the candidate
+ * typed into a preferences field years ago. A candidate whose LinkedIn
+ * preferences still name "Web Developer" — a level roughly a fifth of what
+ * they now earn — cannot have that string level-parsed and downweighted:
+ * most declared titles have no seniority prefix at all ("Software Engineer",
+ * "Full Stack Engineer"), so penalising an unprefixed title would punish
+ * perfectly good targets along with the stale one. `current_level`, derived
+ * from dated career history rather than a hand-typed list, is the one side
+ * of this comparison that is actually trustworthy enough to gate on.
+ *
+ * `currentLevel` undefined (no parseable career history) returns neutral —
+ * `rankJobs` is what decides whether to weight this component at all.
+ */
+export function levelFit(jobTitle: string, currentLevel: Level | undefined): number {
+  if (currentLevel === undefined) return LEVEL_FIT_BEST;
+
+  const jobLevel = titleLevel(jobTitle);
+  const step = LEVELS.indexOf(jobLevel) - LEVELS.indexOf(currentLevel);
+
+  if (step === 0 || step === 1) return LEVEL_FIT_BEST;
+  if (step === -1) return LEVEL_FIT_ONE_BELOW;
+  if (step <= -2) return LEVEL_FIT_FAR_BELOW;
+  return LEVEL_FIT_FAR_ABOVE;
 }
 
 /** True when `value` names a level this module understands. */

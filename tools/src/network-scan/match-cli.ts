@@ -8,6 +8,8 @@ import { HttpClient } from "./http/client.js";
 import { calibrate, formatCalibration, parseSavedJobs } from "./matching/calibration.js";
 import { fetchDescription, needsDescription } from "./matching/enrich.js";
 import { formatFunnel, runMatching, survivingJobIds } from "./matching/pipeline.js";
+import { assignSlugs } from "./matching/slug.js";
+import { checkPreferenceStaleness } from "./matching/staleness.js";
 import { isLevel, structuralVerdict } from "./matching/structural.js";
 import type { Level } from "./matching/structural.js";
 import { FAMILY_NAMES, familyVerdict } from "./matching/taxonomy.js";
@@ -30,6 +32,8 @@ interface MatchCliOptions {
   maxAge?: string;
   minScore?: string;
   referralWeight: string;
+  titleWeight?: string;
+  levelWeight?: string;
   top: string;
   enrich: boolean;
   enrichLimit: string;
@@ -48,6 +52,8 @@ program
   .option("--max-age <days>", "drop postings older than this, where dated")
   .option("--min-score <n>", "drop jobs scoring below this (0-1) once they have a description")
   .option("--referral-weight <n>", "how much who-you-know counts in the ranking (0-1)", "0.4")
+  .option("--title-weight <n>", "how much the job title matching your target titles counts (0-1)")
+  .option("--level-weight <n>", "how much the job's seniority matching your current level counts (0-1)")
   .option("--top <n>", "how many matches to write", "200")
   .option("--no-enrich", "skip fetching descriptions the list endpoints omitted")
   .option("--enrich-limit <n>", "cap on descriptions fetched in one run", "400")
@@ -85,11 +91,28 @@ program
         maxAgeDays: options.maxAge ? Number.parseInt(options.maxAge, 10) : undefined,
         minScore: options.minScore ? Number.parseFloat(options.minScore) : undefined,
         referralWeight: Number.parseFloat(options.referralWeight),
+        // Exposed because the right value is a judgement about the candidate's
+        // own search, not something this tool can decide. Raising it pushes
+        // down roles that score well on skills but are not the kind of job
+        // asked for — a QA automation posting names many technologies, so it
+        // earns high skill coverage while being the wrong role entirely.
+        titleWeight: options.titleWeight ? Number.parseFloat(options.titleWeight) : undefined,
+        // Same reasoning as titleWeight: how hard to lean on the candidate's
+        // current career level, versus everything else, is their call.
+        levelWeight: options.levelWeight ? Number.parseFloat(options.levelWeight) : undefined,
       };
 
       process.stderr.write(
         `Matching ${artifact.jobs.length} jobs against ${network.skills.listed.length} listed skills\n\n`
       );
+
+      // Declared preferences may be years out of date; the candidate should
+      // see exactly what disagrees and why, not have it silently overridden.
+      const stalenessWarnings = checkPreferenceStaleness(network.preferences, network.career);
+      for (const warning of stalenessWarnings) {
+        process.stderr.write(`Note: ${warning.message}\n`);
+      }
+      if (stalenessWarnings.length > 0) process.stderr.write("\n");
 
       // First pass: the cheap tiers, which decide what is worth enriching.
       let result = runMatching(artifact.jobs, network, descriptions, matchOptions);
@@ -139,6 +162,17 @@ program
       const referrers = buildReferrerIndex(network.companies);
       const top = result.ranked.slice(0, Number.parseInt(options.top, 10));
 
+      // Slugs are unique within *this written set* — the file a candidate
+      // actually reads — not the whole ranked pool, most of which never
+      // makes it to disk.
+      const slugs = assignSlugs(
+        top.map((entry) => ({
+          id: entry.job.id,
+          company: entry.job.company_name,
+          title: entry.job.title,
+        }))
+      );
+
       const outPath = resolve(options.output ?? resolve(paths.scanDir, "matches.yml"));
       await mkdir(dirname(outPath), { recursive: true });
       await writeFile(
@@ -156,10 +190,29 @@ program
               awaiting_discipline_review: result.needsDisciplineReview.length,
             },
             funnel: result.funnel,
+            // Named here rather than only printed to stderr, so a reviewer
+            // reading matches.yml later — not just whoever watched the run
+            // happen — still sees that a declared preference disagreed with
+            // career history, and what the tool did about it (nothing; it
+            // widened targeting instead of overriding the declaration).
+            preference_warnings: stalenessWarnings,
             matches: top.map((entry) => ({
+              id: entry.job.id,
+              slug: slugs.get(entry.job.id),
               rank: entry.rank,
-              match_score: entry.matchScore,
+              // Same ranking with the candidate's city preference weighted
+              // back out, for sorting purely on fit and referral access.
+              rank_excluding_location: entry.rankExcludingLocation,
+              // Relative to the strongest job in this run, not an absolute
+              // fraction — `skill_coverage` and `demand_coverage` below are the
+              // literal, run-independent numbers.
+              relative_fit: entry.matchScore,
+              skill_coverage: entry.skillCoverage,
+              demand_coverage: entry.demandCoverage,
               relative_match: entry.relativeMatch,
+              location_score: entry.locationScore,
+              title_affinity: entry.titleAffinity,
+              level_fit: entry.levelFit,
               referral_score: entry.referralScore,
               discipline_confirmed: entry.disciplineConfirmed,
               company: entry.job.company_name,
@@ -170,6 +223,9 @@ program
               // the candidate can apply to the one they actually want.
               variant_urls: (entry.job as { variant_urls?: string[] }).variant_urls,
               variant_count: (entry.job as { variant_count?: number }).variant_count,
+              // Set only when a merge fell back to title-only matching because
+              // a description was missing on one side — see collapseVariants.
+              merge_uncertain: (entry.job as { merge_uncertain?: boolean }).merge_uncertain,
               matched_terms: entry.matchedTerms.slice(0, 15),
               ask: (referrers.get(entry.job.company_id) ?? []).map((person) => ({
                 name: person.name,

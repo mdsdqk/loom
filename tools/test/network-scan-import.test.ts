@@ -10,8 +10,9 @@ import {
   parseConnections,
 } from "../src/network-scan/import/connections.js";
 import { loadExport, readExportCsv } from "../src/network-scan/import/export-reader.js";
-import { buildSignals, parsePreferences } from "../src/network-scan/import/signals.js";
+import { buildCareer, buildSignals, parsePreferences } from "../src/network-scan/import/signals.js";
 import { buildNetworkImport } from "../src/network-scan/import/build.js";
+import type { ExportRow } from "../src/network-scan/import/export-reader.js";
 
 const exportDir = join(
   dirname(fileURLToPath(import.meta.url)),
@@ -245,5 +246,95 @@ describe("buildNetworkImport", () => {
     await expect(buildNetworkImport(join(exportDir, "Jobs"))).rejects.toThrow(
       /No readable Connections.csv/
     );
+  });
+
+  it("carries the candidate's career trajectory alongside their skills", async () => {
+    const frozen = () => "2026-09-08T00:00:00.000Z";
+    const first = await buildNetworkImport(exportDir, frozen);
+
+    // The fixture's current, open-ended position.
+    expect(first.career.current_title).toBe("Senior Software Engineer");
+    expect(first.career.current_level).toBe("senior");
+    expect(first.career.current_is_inferred).toBe(false);
+  });
+});
+
+function position(over: Partial<ExportRow> & { Title: string }): ExportRow {
+  return { "Company Name": "Acme", Description: "", Location: "", "Started On": "", "Finished On": "", ...over };
+}
+
+describe("buildCareer", () => {
+  it("orders positions most-recent-start-first", () => {
+    const career = buildCareer([
+      position({ Title: "Software Engineer", "Started On": "Jul 2019", "Finished On": "Jun 2022" }),
+      position({ Title: "Senior Software Engineer", "Started On": "Apr 2024" }),
+      position({ Title: "Lead Software Engineer", "Started On": "Jul 2022", "Finished On": "Nov 2022" }),
+    ]);
+
+    expect(career.positions.map((p) => p.title)).toEqual([
+      "Senior Software Engineer",
+      "Lead Software Engineer",
+      "Software Engineer",
+    ]);
+  });
+
+  it("picks the open-ended position as current, and reads its level", () => {
+    const career = buildCareer([
+      position({ Title: "Software Engineer", "Started On": "Jul 2019", "Finished On": "Jun 2022" }),
+      position({ Title: "Senior Software Engineer", "Started On": "Apr 2024" }),
+    ]);
+
+    expect(career.current_title).toBe("Senior Software Engineer");
+    expect(career.current_level).toBe("senior");
+    expect(career.current_is_inferred).toBe(false);
+    expect(career.positions[0]).toMatchObject({ title: "Senior Software Engineer", is_current: true });
+    expect(career.positions[1]).toMatchObject({ title: "Software Engineer", is_current: false });
+  });
+
+  it("falls back to the most recently started position when none is open-ended, and marks it inferred", () => {
+    const career = buildCareer([
+      position({ Title: "Junior Developer", "Started On": "Jan 2018", "Finished On": "Dec 2019" }),
+      position({ Title: "Software Engineer", "Started On": "Jan 2020", "Finished On": "Dec 2022" }),
+    ]);
+
+    expect(career.current_title).toBe("Software Engineer");
+    expect(career.current_is_inferred).toBe(true);
+    // Every position genuinely had an end date, so none reads as literally current.
+    expect(career.positions.every((p) => !p.is_current)).toBe(true);
+  });
+
+  it("does not throw on an unparseable date, and does not let it masquerade as the oldest position", () => {
+    const career = buildCareer([
+      position({ Title: "Mystery Role", "Started On": "sometime, I forget" }),
+      position({ Title: "Software Engineer", "Started On": "Jan 2020", "Finished On": "Dec 2022" }),
+    ]);
+
+    expect(() => career).not.toThrow();
+    // An undated position is not evidence it is old — it sorts after every
+    // dated one rather than being forced to the front or the back by a
+    // fabricated epoch timestamp.
+    expect(career.positions.map((p) => p.title)).toEqual(["Software Engineer", "Mystery Role"]);
+  });
+
+  it("still yields a current title from a single undated, open-ended position", () => {
+    const career = buildCareer([position({ Title: "Consultant", "Started On": "", "Finished On": "" })]);
+    expect(career.current_title).toBe("Consultant");
+    // No end date recorded — this genuinely is the open-ended case, not a
+    // fallback guess, even though there is no date to confirm recency with.
+    expect(career.current_is_inferred).toBe(false);
+  });
+
+  it("orders identically across two independent calls with the same input", () => {
+    const rows = [
+      position({ Title: "Software Engineer", "Started On": "Jul 2019", "Finished On": "Jun 2022" }),
+      position({ Title: "Senior Software Engineer", "Started On": "Apr 2024" }),
+      position({ Title: "Lead Software Engineer", "Started On": "Jul 2022", "Finished On": "Nov 2022" }),
+    ];
+    expect(buildCareer(rows)).toEqual(buildCareer([...rows]));
+  });
+
+  it("returns an empty, non-inferred career for someone with no position history", () => {
+    expect(buildCareer(undefined)).toEqual({ positions: [], current_is_inferred: false });
+    expect(buildCareer([])).toEqual({ positions: [], current_is_inferred: false });
   });
 });

@@ -3,7 +3,7 @@ import type { Company, NetworkImport } from "../schema.js";
 import { NetworkImportSchema } from "../schema.js";
 import { findMergeReviews, groupByCompany, parseConnections } from "./connections.js";
 import { loadExport } from "./export-reader.js";
-import { buildSignals, buildSkills, parsePreferences } from "./signals.js";
+import { buildCareer, buildSignals, buildSkills, parsePreferences } from "./signals.js";
 
 /**
  * Stage 1 of the network scan: read a LinkedIn data export directory and
@@ -55,6 +55,7 @@ export async function buildNetworkImport(
     },
     preferences: parsePreferences(rows.jobPreferences),
     skills: buildSkills({ skills: rows.skills, positions: rows.positions }),
+    career: buildCareer(rows.positions),
     companies,
     review: findMergeReviews(groups),
     missing_files: missing,

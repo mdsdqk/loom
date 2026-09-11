@@ -1,4 +1,5 @@
 import type {
+  Career,
   CandidatePreferences,
   CandidateSkills,
   CompanySignals,
@@ -7,6 +8,12 @@ import type {
 import { normalizationKey } from "./connections.js";
 import type { CompanyGroup } from "./connections.js";
 import type { ExportRow } from "./export-reader.js";
+import { distinctiveTerms } from "../text-terms.js";
+// `matching/` sits above `import/` in the dependency order everywhere else in
+// this codebase, but `titleLevel` is a pure string->Level function with no
+// dependency back on anything import-side, so pulling it in here is the
+// "reuse the existing parser" the review asked for rather than a cycle.
+import { titleLevel } from "../matching/structural.js";
 
 /**
  * Non-connection signal from the rest of the LinkedIn export.
@@ -117,32 +124,6 @@ export function buildSignals(groups: CompanyGroup[], sources: SignalSources): Bu
 }
 
 /**
- * Words too common in job and profile text to distinguish anything. Matching on
- * them would score every job against every candidate.
- */
-const STOPWORDS = new Set([
-  "and", "the", "for", "with", "our", "you", "your", "are", "will", "team", "work", "working",
-  "experience", "years", "role", "job", "position", "company", "business", "new", "using", "use",
-  "including", "across", "within", "strong", "good", "great", "ability", "skills", "knowledge",
-  "development", "developing", "build", "building", "built", "help", "support", "ensure", "manage",
-  "based", "well", "have", "has", "been", "this", "that", "from", "into", "other", "more", "who",
-  "what", "when", "how", "all", "any", "can", "not", "was", "were", "they", "them", "their",
-]);
-
-/** Splits free text into distinctive lowercase terms. */
-function termsFrom(text: string): string[] {
-  return (text ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    // Keep the punctuation that carries meaning in technology names.
-    .replace(/[^a-z0-9+#./ -]+/g, " ")
-    .split(/[\s,/]+/)
-    .map((term) => term.replace(/^[-.]+|[-.]+$/g, ""))
-    .filter((term) => term.length > 2 && term.length < 32 && !STOPWORDS.has(term));
-}
-
-/**
  * Assembles what the candidate can do from their own export.
  *
  * Skills exactly as they listed them, the titles they have held, and the
@@ -164,7 +145,7 @@ export function buildSkills(sources: {
 
   const counts = new Map<string, number>();
   for (const row of sources.positions ?? []) {
-    for (const term of termsFrom(`${row["Description"] ?? ""} ${row["Title"] ?? ""}`)) {
+    for (const term of distinctiveTerms(`${row["Description"] ?? ""} ${row["Title"] ?? ""}`)) {
       counts.set(term, (counts.get(term) ?? 0) + 1);
     }
   }
@@ -178,4 +159,91 @@ export function buildSkills(sources: {
     .map(([term]) => term);
 
   return { listed, held_titles: heldTitles, experience_terms: experienceTerms };
+}
+
+/** LinkedIn's export spells months as 3-letter abbreviations. */
+const MONTH_INDEX: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+/**
+ * Parses LinkedIn's `"Apr 2024"` export date into a sortable month index
+ * (year * 12 + month), or `null` for anything that doesn't match.
+ *
+ * Deliberately not `new Date(value)`: that constructor's free-form parsing is
+ * engine-dependent, and handed a string it cannot make sense of, some
+ * versions return an invalid date whose `getTime()` is `NaN` while others
+ * guess a nearby valid one — either way, a bug elsewhere that does
+ * `date.getTime() || 0` turns an unparseable date into the Unix epoch, which
+ * then reads as the *oldest possible position* rather than as "unknown". A
+ * dedicated parser that returns `null` and forces the caller to handle it
+ * explicitly is what keeps a bad date from silently winning or losing a sort.
+ */
+function parseCareerDate(value: string | undefined): number | null {
+  const match = /^([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/.exec((value ?? "").trim());
+  if (!match) return null;
+  const month = MONTH_INDEX[match[1].toLowerCase()];
+  return month === undefined ? null : Number(match[2]) * 12 + month;
+}
+
+/**
+ * Assembles the candidate's career trajectory from `Positions.csv`.
+ *
+ * Separate from `CandidateSkills.held_titles`, which is an alphabetically
+ * sorted *set* — useful for keyword matching, useless for recency, since it
+ * makes a title held for one summer eight years ago indistinguishable from
+ * the one held today. This is what lets a consumer ask "what is this person
+ * doing right now" rather than "what have they ever done".
+ *
+ * Ordering is most-recent-start-first and fully deterministic: a position
+ * whose start date does not parse is not treated as old *or* as recent — it
+ * sorts after every dated position (there being no evidence either way), and
+ * remaining ties break on the position's original row order in the export,
+ * never on wall-clock or object identity.
+ */
+export function buildCareer(rows: ExportRow[] | undefined): Career {
+  const parsed = (rows ?? [])
+    .map((row, index) => ({
+      title: (row["Title"] ?? "").trim(),
+      started_on: (row["Started On"] ?? "").trim() || undefined,
+      finished_on: (row["Finished On"] ?? "").trim() || undefined,
+      index,
+    }))
+    .filter((position) => position.title)
+    .map((position) => ({ ...position, startKey: parseCareerDate(position.started_on) }));
+
+  if (parsed.length === 0) {
+    return { positions: [], current_is_inferred: false };
+  }
+
+  const ordered = [...parsed].sort((a, b) => {
+    if (a.startKey !== null && b.startKey !== null) return b.startKey - a.startKey;
+    if (a.startKey !== null) return -1;
+    if (b.startKey !== null) return 1;
+    return a.index - b.index;
+  });
+
+  // A position counts as current if the export never recorded an end date —
+  // true of more than one row for someone with concurrent roles. Among those,
+  // the one with the latest start is the candidate's actual current title;
+  // `ordered` already sorts that way, so it is simply the first open one.
+  const openEnded = ordered.filter((position) => !position.finished_on);
+  const current = openEnded[0] ?? ordered[0];
+
+  return {
+    positions: ordered.map((position) => ({
+      title: position.title,
+      started_on: position.started_on,
+      finished_on: position.finished_on,
+      is_current: !position.finished_on,
+      level: titleLevel(position.title),
+    })),
+    current_title: current.title,
+    current_level: titleLevel(current.title),
+    // No position was open-ended, so "current" fell back to whichever one
+    // started most recently rather than one the export actually marked
+    // ongoing — that fallback is real information, not a rounding error.
+    current_is_inferred: openEnded.length === 0,
+  };
 }

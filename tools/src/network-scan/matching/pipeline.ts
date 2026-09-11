@@ -1,5 +1,5 @@
 import { collapseVariants } from "./collapse.js";
-import { scoreDescription } from "./keywords.js";
+import { buildDemandWeights, rescaleForBatch, scoreDescription } from "./keywords.js";
 import { rankJobs } from "./rank.js";
 import { leverageScore } from "../report.js";
 import { structuralVerdict } from "./structural.js";
@@ -34,6 +34,8 @@ export interface MatchOptions {
   /** Reject below this keyword score. Left undefined, nothing is dropped on score. */
   minScore?: number;
   referralWeight?: number;
+  titleWeight?: number;
+  levelWeight?: number;
   now?: Date;
 }
 
@@ -65,8 +67,10 @@ export function runMatching(
 ): MatchResult {
   const funnel: FunnelStage[] = [];
 
-  // Tier 0.5 — one role listed per city becomes one row.
-  const collapsed = collapseVariants(jobs);
+  // Tier 0.5 — one role listed per city becomes one row. Descriptions are
+  // passed in so collapse can tell "same role, another city" from "same
+  // title, different job" instead of deciding on the title alone.
+  const collapsed = collapseVariants(jobs, descriptions);
   funnel.push({
     stage: "collapse duplicate postings",
     before: jobs.length,
@@ -132,14 +136,27 @@ export function runMatching(
       return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
 
-  // Tier 3 — keyword overlap, for whatever text is available.
+  // Tier 3 — keyword overlap, for whatever text is available. Demand weights
+  // are built once from every description available — not just this tier's
+  // jobs — so a description's boilerplate is judged against the whole
+  // corpus's baseline, not against however many jobs happened to survive to
+  // here. See `buildDemandWeights` for why this is what keeps a posting's
+  // benefits paragraph from diluting its coverage score.
+  const demandWeights = buildDemandWeights(descriptions.values());
+  const rawScored = afterFamily.map((job) => ({
+    job,
+    keywords: scoreDescription(descriptions.get(job.id) ?? "", network.skills, { demandWeights }),
+    disciplineConfirmed: confirmed.has(job.id),
+  }));
+
+  // Both coverage fractions have a low honest ceiling on real data (see
+  // `rescaleForBatch`), so `score` is rescaled against what this batch of
+  // jobs actually achieved before anything downstream — ranking, the score
+  // threshold, the number written to the file — ever reads it.
+  const rescaledKeywords = rescaleForBatch(rawScored.map((entry) => entry.keywords));
   const scoreReasons: Record<string, number> = {};
-  const scored = afterFamily
-    .map((job) => ({
-      job,
-      keywords: scoreDescription(descriptions.get(job.id) ?? "", network.skills),
-      disciplineConfirmed: confirmed.has(job.id),
-    }))
+  const scored = rawScored
+    .map((entry, index) => ({ ...entry, keywords: rescaledKeywords[index] }))
     .filter(({ job, keywords }) => {
       if (options.minScore === undefined) return true;
       // A job with no description yet cannot be scored, and must not be dropped
@@ -156,9 +173,14 @@ export function runMatching(
     reasons: scoreReasons,
   });
 
-  // Tier 5 — order by fit and referral access together.
+  // Tier 5 — order by fit, referral access, location preference, title
+  // affinity and level fit together.
   const ranked = rankJobs(scored, network.companies as Company[], {
     referralWeight: options.referralWeight,
+    titleWeight: options.titleWeight,
+    levelWeight: options.levelWeight,
+    preferences: network.preferences,
+    career: network.career,
   });
 
   return { ranked, needsDescription, needsDisciplineReview, funnel };

@@ -97,6 +97,45 @@ export const CandidateSkillsSchema = z.object({
   experience_terms: z.array(z.string()).default([]),
 });
 
+/**
+ * One job someone held, ordered by the importer to be most-recent-first.
+ *
+ * `level` is `titleLevel(title)` from `matching/structural.ts` — recorded
+ * here rather than re-derived by every consumer, but deliberately typed as a
+ * plain string rather than importing that module's `Level` type: `schema.ts`
+ * sits below `matching/`, and nothing here should create a reason for that to
+ * reverse.
+ */
+export const CareerPositionSchema = z.object({
+  title: z.string().min(1),
+  /** LinkedIn's export format, "Apr 2024" — absent when unparsed or unset. */
+  started_on: z.string().optional(),
+  finished_on: z.string().optional(),
+  /** No `finished_on` recorded — may be true for more than one position. */
+  is_current: z.boolean(),
+  level: z.string(),
+});
+
+/**
+ * The candidate's career trajectory, distinct from `CandidateSkills.held_titles`
+ * (an alphabetically sorted set, useful for keyword matching but blind to
+ * recency — it cannot tell a five-year-old internship from the current role).
+ * This is what lets the matcher target the job someone is *now*, not just
+ * every job they have ever mentioned.
+ */
+export const CareerSchema = z.object({
+  positions: z.array(CareerPositionSchema).default([]),
+  current_title: z.string().optional(),
+  current_level: z.string().optional(),
+  /**
+   * True when no position was open-ended (every one had a `finished_on`), so
+   * `current_title`/`current_level` fell back to the most recently started
+   * position instead of an actual "no end date" one. Surfaced so a consumer
+   * can tell an inferred current role from a stated one.
+   */
+  current_is_inferred: z.boolean().default(false),
+});
+
 export const MergeReviewSchema = z.object({
   a: z.string().min(1),
   b: z.string().min(1),
@@ -120,6 +159,7 @@ export const NetworkImportSchema = z.object({
   counts: ImportCountsSchema,
   preferences: CandidatePreferencesSchema,
   skills: CandidateSkillsSchema.default({ listed: [], held_titles: [], experience_terms: [] }),
+  career: CareerSchema.default({ positions: [], current_is_inferred: false }),
   companies: z.array(CompanySchema).default([]),
   review: z.array(MergeReviewSchema).default([]),
   /** Files the importer expected but did not find, by basename. */
@@ -314,6 +354,8 @@ export type CompanySignals = z.infer<typeof CompanySignalsSchema>;
 export type Company = z.infer<typeof CompanySchema>;
 export type CandidatePreferences = z.infer<typeof CandidatePreferencesSchema>;
 export type CandidateSkills = z.infer<typeof CandidateSkillsSchema>;
+export type CareerPosition = z.infer<typeof CareerPositionSchema>;
+export type Career = z.infer<typeof CareerSchema>;
 export type MergeReview = z.infer<typeof MergeReviewSchema>;
 export type ImportCounts = z.infer<typeof ImportCountsSchema>;
 export type NetworkImport = z.infer<typeof NetworkImportSchema>;

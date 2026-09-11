@@ -409,6 +409,8 @@ pnpm network-match -e path/to/export      # also calibrate against saved jobs
 | `--max-age <days>` | drop postings older than this, where the provider dates them |
 | `--min-score <0-1>` | drop jobs scoring below this, once they have a description |
 | `--referral-weight <0-1>` | how much who-you-know counts; 0 ranks purely on fit |
+| `--title-weight <0-1>` | how much the job title matching your target titles counts (default 0.3) |
+| `--level-weight <0-1>` | how much the job's seniority matching your current level counts |
 | `--top <n>` | how many matches to write (default 200) |
 | `--enrich-limit <n>` | cap on descriptions fetched in one run (default 400) |
 | `--concurrency <n>` | in-flight HTTP requests during enrichment |
@@ -442,10 +444,56 @@ When `--enrich-limit` cannot cover everything, the budget goes to confirmed
 disciplines at the companies the candidate has the most pull at, rather than to
 whichever job id happened to sort first.
 
-Scoring is a weighted overlap between the posting and the candidate's own
-words — the skills they listed, the titles they have held, the vocabulary of
-their own role descriptions — and every matched term is reported. Terms match
-whole, so `Java` is not found inside `JavaScript`.
+Each match carries a stable `id` and a readable `slug`, and reports its scoring
+in parts rather than as one opaque number:
+
+| field | meaning |
+|---|---|
+| `skill_coverage` | of your listed skills, the fraction this posting mentions |
+| `demand_coverage` | of what the posting asks for, the fraction you have |
+| `title_affinity` | how close the title is to the roles you said you want |
+| `location_score` | 1.0 for your first-choice location, less further down |
+| `relative_fit` | the two coverages combined, **relative to the best job in this run** |
+| `rank` / `rank_excluding_location` | final ordering, with and without location |
+
+`skill_coverage` and `demand_coverage` are literal fractions and mean the same
+thing between runs. `relative_fit` does not — it is rescaled against the
+strongest job in the same run, because the literal numbers are structurally
+capped (no single job needs a third of a 39-skill résumé) and a good match
+reading `0.07` looks broken. Terms match whole, so `Java` is not found inside
+`JavaScript`.
+
+### Declared preferences are cross-checked, not obeyed
+
+LinkedIn never prompts anyone to revisit their job-seeker preferences, so that
+file records what the candidate typed at some past moment. One real export had
+gone five years without an update and still listed a tier of role its owner had
+long since moved past — targeting on it alone surfaced jobs at a fraction of
+what they were actually pursuing.
+
+`Positions.csv` is the better evidence, and the import now extracts it: the
+roles actually held, in order, with the seniority each implies and which one is
+current. That feeds matching in three ways.
+
+- **Recent held titles become targets** alongside the declared ones, so the
+  current role counts even when the declaration has gone stale.
+- **`level_fit`** scores each *job's* level against the candidate's current
+  one. The comparison is deliberately on the job rather than on the declared
+  title: most declared titles omit a seniority prefix, so level-parsing them
+  would penalise perfectly good targets like "Software Engineer".
+- **A declaration the history does not corroborate is weighted down**, not
+  discarded. It still counts — the candidate did say it, and they may be
+  changing direction deliberately — but it can no longer score a perfect match.
+
+Any such disagreement is reported rather than silently resolved: `matches.yml`
+carries `preference_warnings` naming the declared title, the current title, the
+evidence, and what was done about it. The candidate decides which is right.
+
+Title affinity matters more than it first appears. A QA automation posting
+names a great many technologies and so scores well on skills while being the
+wrong kind of role entirely; the title signal is what keeps it out of the top
+of the list. `--title-weight` is exposed because how strictly to hold to a
+declared title is the candidate's judgement, not the tool's.
 
 Ranking combines fit with **referral leverage**, because the point is a
 referral rather than a job listing: a decent match where a former colleague is

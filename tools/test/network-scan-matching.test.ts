@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  levelFit,
   locationCompatible,
+  locationScore,
   structuralVerdict,
   titleLevel,
 } from "../src/network-scan/matching/structural.js";
 import { collapseVariants } from "../src/network-scan/matching/collapse.js";
+import { assignSlugs } from "../src/network-scan/matching/slug.js";
 import {
   calibrate,
   formatCalibration,
@@ -447,5 +450,208 @@ describe("collapse composed with location filtering", () => {
       job({ id: "b", title: "Engineer", locations: ["Lima, Peru"] }),
     ]).jobs;
     expect(locationCompatible(collapsed, preferences)).toBe(false);
+  });
+});
+
+describe("locationScore", () => {
+  const wanted: CandidatePreferences = { ...preferences, locations: ["Bengaluru", "Dubai"] };
+
+  it("scores the candidate's first-listed location above a later one", () => {
+    const bengaluru = job({ id: "1", title: "X", locations: ["Bengaluru, India"] });
+    const dubai = job({ id: "2", title: "X", locations: ["Dubai, UAE"] });
+    expect(locationScore(bengaluru, wanted)).toBeGreaterThan(locationScore(dubai, wanted));
+  });
+
+  it("scores a matched preference above an unknown location", () => {
+    const dubai = job({ id: "2", title: "X", locations: ["Dubai, UAE"] });
+    const unknown = job({ id: "3", title: "X", locations: [] });
+    expect(locationScore(dubai, wanted)).toBeGreaterThan(locationScore(unknown, wanted));
+  });
+
+  it("scores remote explicitly, not as unknown", () => {
+    const remote = job({ id: "1", title: "X", locations: [], remote: true });
+    const unknown = job({ id: "2", title: "X", locations: [] });
+    expect(locationScore(remote, wanted)).toBeGreaterThan(locationScore(unknown, wanted));
+  });
+
+  it("treats a city's alias the same as its stated name", () => {
+    const bangalore = job({ id: "1", title: "X", locations: ["Bangalore, India"] });
+    expect(locationScore(bangalore, wanted)).toBe(locationScore(
+      job({ id: "2", title: "X", locations: ["Bengaluru, India"] }),
+      wanted
+    ));
+  });
+
+  it("does not penalise location when the candidate stated no preference", () => {
+    const anywhere = job({ id: "1", title: "X", locations: ["Lima, Peru"] });
+    expect(locationScore(anywhere, { ...wanted, locations: [] })).toBe(1);
+  });
+});
+
+describe("collapse decides on the description, not the title alone", () => {
+  // Same title at the same company, but the descriptions are for genuinely
+  // different roles — this is the shape of the Okta bug: five distinct team
+  // postings all titled "Senior Software Engineer" collapsed into one row.
+  const teamA =
+    "Join our identity platform team building authentication APIs in Go and Kubernetes. " +
+    "You will own the token issuance service and its on-call rotation.";
+  const teamB =
+    "Join our billing team building invoicing pipelines in Python and Kafka. " +
+    "You will own the usage metering service and its data reconciliation jobs.";
+
+  it("keeps two same-title postings separate when their descriptions clearly differ", () => {
+    const result = collapseVariants(
+      [
+        job({ id: "a", title: "Senior Software Engineer", company_id: "acme" }),
+        job({ id: "b", title: "Senior Software Engineer", company_id: "acme" }),
+      ],
+      new Map([
+        ["a", teamA],
+        ["b", teamB],
+      ])
+    );
+
+    expect(result.jobs).toHaveLength(2);
+    expect(result.merged).toBe(0);
+  });
+
+  it("merges two postings whose titles differ only by a parenthetical suffix when the descriptions match", () => {
+    const result = collapseVariants(
+      [
+        job({ id: "a", title: "Software Engineer Manager, Developer Foundation", company_id: "acme" }),
+        job({ id: "b", title: "Software Engineer Manager, Developer Foundation (ODF)", company_id: "acme" }),
+      ],
+      new Map([
+        ["a", teamA],
+        ["b", teamA],
+      ])
+    );
+
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0].variant_count).toBe(2);
+  });
+
+  it("falls back to title-only matching, and flags the row, when a description is missing", () => {
+    const result = collapseVariants(
+      [
+        job({ id: "a", title: "Senior Software Engineer", company_id: "acme" }),
+        job({ id: "b", title: "Senior Software Engineer", company_id: "acme" }),
+      ],
+      new Map([["a", teamA]]) // "b" has no description on record yet
+    );
+
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0].merge_uncertain).toBe(true);
+  });
+
+  it("does not flag a merge where every posting was compared and agreed", () => {
+    const result = collapseVariants(
+      [
+        job({ id: "a", title: "Senior Software Engineer", company_id: "acme" }),
+        job({ id: "b", title: "Senior Software Engineer", company_id: "acme" }),
+      ],
+      new Map([
+        ["a", teamA],
+        ["b", teamA],
+      ])
+    );
+
+    expect(result.jobs[0].merge_uncertain).toBeUndefined();
+  });
+
+  it("still merges the genuine multi-city case with no description available at all", () => {
+    // Guards the existing Toronto/Bengaluru scenario: collapseVariants must
+    // keep working exactly as before when called without a descriptions map.
+    const result = collapseVariants([
+      job({ id: "gh:1", title: "Senior Software Engineer", locations: ["Toronto, Canada"] }),
+      job({ id: "gh:2", title: "Senior Software Engineer", locations: ["Bengaluru, India"] }),
+    ]);
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0].all_locations).toEqual(["Toronto, Canada", "Bengaluru, India"]);
+  });
+});
+
+describe("assignSlugs", () => {
+  it("builds a readable, URL-safe slug from company and title", () => {
+    const slugs = assignSlugs([{ id: "1", company: "Acme Inc.", title: "Senior Software Engineer" }]);
+    expect(slugs.get("1")).toBe("acme-inc-senior-software-engineer");
+  });
+
+  it("is unique within a run when two rows would otherwise collide", () => {
+    const rows = [
+      { id: "gh:1", company: "Acme", title: "Software Engineer" },
+      { id: "gh:2", company: "Acme", title: "Software Engineer" },
+    ];
+    const slugs = assignSlugs(rows);
+    expect(slugs.get("gh:1")).not.toBe(slugs.get("gh:2"));
+    expect(new Set(slugs.values()).size).toBe(2);
+  });
+
+  it("produces identical slugs across two runs over the same jobs", () => {
+    const rows = [
+      { id: "gh:1", company: "Acme", title: "Software Engineer" },
+      { id: "gh:2", company: "Acme", title: "Software Engineer" },
+    ];
+    const first = assignSlugs(rows);
+    const second = assignSlugs([...rows].reverse());
+    expect(first.get("gh:1")).toBe(second.get("gh:1"));
+    expect(first.get("gh:2")).toBe(second.get("gh:2"));
+  });
+
+  it("leaves a non-colliding slug undisturbed", () => {
+    const slugs = assignSlugs([
+      { id: "1", company: "Acme", title: "Software Engineer" },
+      { id: "2", company: "Other Co", title: "Data Analyst" },
+    ]);
+    expect(slugs.get("1")).toBe("acme-software-engineer");
+  });
+
+  it("caps a very long slug rather than growing without bound", () => {
+    const slugs = assignSlugs([
+      {
+        id: "1",
+        company: "A Very Long Company Name That Keeps Going And Going",
+        title: "An Equally Long And Overwrought Job Title For This Role",
+      },
+    ]);
+    expect(slugs.get("1")!.length).toBeLessThanOrEqual(80);
+  });
+});
+
+describe("levelFit", () => {
+  it("scores a job at the candidate's current level as the best match", () => {
+    expect(levelFit("Senior Software Engineer", "senior")).toBe(1);
+  });
+
+  it("does not punish a stretch role one step above current", () => {
+    expect(levelFit("Staff Software Engineer", "senior")).toBe(1);
+  });
+
+  it("reduces but does not eliminate a role one step below current", () => {
+    const oneBelow = levelFit("Software Engineer", "senior");
+    expect(oneBelow).toBeGreaterThan(0);
+    expect(oneBelow).toBeLessThan(1);
+  });
+
+  it("scores a role two or more steps below current low", () => {
+    // An unprefixed title ("Web Developer") reads as "mid", the same honest
+    // default `titleLevel` gives any bare title — that default is what keeps
+    // this from misjudging an unprefixed *declared* title (see rank.ts), and
+    // it means a bare "Web Developer" *posting* only reads one step below a
+    // senior candidate on this axis alone. A title whose own wording states
+    // its level ("Junior Web Developer") is what actually clears two steps.
+    const farBelow = levelFit("Junior Web Developer", "senior");
+    const oneBelow = levelFit("Web Developer", "senior");
+    expect(farBelow).toBeLessThan(oneBelow);
+  });
+
+  it("reduces, but does not zero out, a role more than one step above current", () => {
+    const farAbove = levelFit("VP of Engineering", "senior");
+    expect(farAbove).toBeGreaterThan(0);
+    expect(farAbove).toBeLessThan(1);
+  });
+
+  it("is neutral when the candidate's current level is unknown", () => {
+    expect(levelFit("Web Developer", undefined)).toBe(1);
   });
 });
