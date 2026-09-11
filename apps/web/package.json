@@ -1,0 +1,33 @@
+{
+  "name": "@loom/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n api,ui -c cyan,magenta --kill-others-on-fail \"node --watch --import tsx server/index.ts\" \"vite\"",
+    "dev:api": "node --watch --import tsx server/index.ts",
+    "dev:ui": "vite",
+    "build": "tsc -b tsconfig.json && vite build",
+    "preview": "vite preview",
+    "lint": "eslint --config ../../eslint.config.mjs .",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.6",
+    "@loom/tools": "workspace:*",
+    "hono": "^4.9.10",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.16",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
+    "tailwindcss": "^4.1.16",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.9"
+  }
+}

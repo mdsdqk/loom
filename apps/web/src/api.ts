@@ -1,0 +1,97 @@
+import type {
+  EventState,
+  LoomConfig,
+  Opportunity,
+  Outcome,
+  Status,
+  StatusEvent,
+} from "@loom/tools";
+
+export type { EventState, LoomConfig, Opportunity, Outcome, Status, StatusEvent };
+
+export interface ListResponse {
+  opportunities: Opportunity[];
+  failures: { slug: string; error: string }[];
+  config: LoomConfig;
+}
+
+export interface MasterResume {
+  name: string;
+  path: string;
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    headers: init?.body ? { "content-type": "application/json" } : undefined,
+  });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message =
+      body && typeof body === "object" && "error" in body
+        ? String((body as { error: unknown }).error)
+        : `Request failed (${response.status})`;
+    throw new Error(message);
+  }
+  return body as T;
+}
+
+export const listOpportunities = () => request<ListResponse>("/api/opportunities");
+
+export const listMasterResumes = () =>
+  request<{ resumes: MasterResume[] }>("/api/master-resumes");
+
+export interface StatusChange {
+  status: Status;
+  note?: string;
+  label?: string;
+  outcome?: Outcome;
+  /** ISO instant. Omitted means now. */
+  at?: string;
+  state?: EventState;
+  eta?: string;
+}
+
+/** `null` clears a field; omitted leaves it as it is. */
+export interface EventPatch {
+  status?: Status;
+  at?: string;
+  state?: EventState;
+  label?: string | null;
+  note?: string | null;
+  eta?: string | null;
+  outcome?: Outcome | null;
+}
+
+export const changeStatus = (slug: string, change: StatusChange) =>
+  request<Opportunity>(`/api/opportunities/${encodeURIComponent(slug)}/status`, {
+    method: "POST",
+    body: JSON.stringify(change),
+  });
+
+export const updateEvent = (slug: string, index: number, patch: EventPatch) =>
+  request<Opportunity>(
+    `/api/opportunities/${encodeURIComponent(slug)}/history/${index}`,
+    { method: "PATCH", body: JSON.stringify(patch) }
+  );
+
+export const removeEvent = (slug: string, index: number) =>
+  request<Opportunity>(
+    `/api/opportunities/${encodeURIComponent(slug)}/history/${index}`,
+    { method: "DELETE" }
+  );
+
+export interface CreateInput {
+  jd: string;
+  masterResumePath: string;
+  company?: string;
+  role?: string;
+  jobId?: string;
+  postedDate?: string;
+}
+
+export const createOpportunity = (input: CreateInput) =>
+  request<Opportunity>("/api/opportunities", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
