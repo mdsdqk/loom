@@ -56,7 +56,10 @@ export default function App() {
         status: currentStatus(opportunity.meta),
         stalled,
         idle: idleDays(opportunity.meta),
-        lastAt: opportunity.meta.history.filter((e) => e.state === "recorded").at(-1)?.at,
+        lastAt: opportunity.meta.history.reduce<string | undefined>(
+          (newest, e) => (!newest || e.at > newest ? e.at : newest),
+          undefined
+        ),
         round: currentRound(opportunity.meta),
         action: nextAction(opportunity.meta),
         owed: awaitingCandidate(opportunity.meta),
@@ -324,7 +327,9 @@ export default function App() {
             <span className="h-[3px] w-[14px] bg-mark" />
             Scheduled: waiting on them
           </span>
-          <span className="caps text-ink-4">Idle counts from the last recorded entry</span>
+          <span className="caps text-ink-4">
+            Idle counts from the newest entry; * marks a stage that has not happened yet
+          </span>
         </div>
       </div>
 

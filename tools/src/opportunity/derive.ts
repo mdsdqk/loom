@@ -8,7 +8,7 @@ import {
   isPending,
   isRecorded,
   isScheduled,
-  roundsAt,
+  statusIndex,
 } from "./schema.js";
 
 /**
@@ -16,11 +16,6 @@ import {
  *
  * No filesystem, no I/O: the web client imports these to render exactly what
  * the CLI computes, so "stalled" means one thing everywhere.
- *
- * Every "where does this stand" answer reads recorded entries only. A booked
- * interview is a commitment, not a fact, so it must not advance the status or
- * reset the idle clock — an opportunity waiting three weeks for a scheduled
- * round is still waiting.
  */
 
 export function recordedEvents(meta: OpportunityMeta): StatusEvent[] {
@@ -42,20 +37,42 @@ export function openEvents(meta: OpportunityMeta): StatusEvent[] {
   return meta.history.filter(isAhead);
 }
 
-export function currentEvent(meta: OpportunityMeta): StatusEvent | undefined {
+/** The last thing that actually happened. */
+export function lastRecorded(meta: OpportunityMeta): StatusEvent | undefined {
   const recorded = recordedEvents(meta);
   return recorded[recorded.length - 1];
 }
 
 /**
- * The status is whatever the last recorded entry says, and nothing else.
+ * The entry that says where the opportunity stands.
  *
- * Falling back to the stored `status` let a stale cache outlive the entry that
- * justified it: delete the only recorded entry and the opportunity kept
- * reporting the old status while the row rendered as unknown.
+ * This is the furthest stage anything has reached, booked entries included.
+ * Scheduling an interview is the company moving the candidate to the interview
+ * stage; it is news, not a plan the candidate made up. Waiting for the round to
+ * happen before saying so left an opportunity reading `screening` when an
+ * assessment was already set.
+ *
+ * Taking the furthest stage rather than the last entry keeps the stage from
+ * going backwards when a later entry belongs to an earlier one, such as a
+ * follow-up screening call booked mid-loop. `closed` is last in the pipeline,
+ * so a closed opportunity stays closed whatever is still on the calendar.
  */
+export function currentEvent(meta: OpportunityMeta): StatusEvent | undefined {
+  let best: StatusEvent | undefined;
+  for (const event of meta.history) {
+    if (!best || statusIndex(event.status) >= statusIndex(best.status)) best = event;
+  }
+  return best;
+}
+
 export function currentStatus(meta: OpportunityMeta): Status | undefined {
   return currentEvent(meta)?.status;
+}
+
+/** Whether the stage the opportunity is at has actually happened yet. */
+export function currentIsAhead(meta: OpportunityMeta): boolean {
+  const event = currentEvent(meta);
+  return event ? isAhead(event) : false;
 }
 
 /** The next booked slot, when one exists. */
@@ -80,7 +97,7 @@ export function awaitingCandidate(meta: OpportunityMeta): boolean {
 export function currentRound(meta: OpportunityMeta): number | undefined {
   const event = currentEvent(meta);
   if (!event || !isLoopable(event.status)) return undefined;
-  return event.round ?? roundsAt(recordedEvents(meta), event.status);
+  return event.round;
 }
 
 /**
@@ -92,10 +109,21 @@ export function rounds(meta: OpportunityMeta, status: Status): StatusEvent[] {
   return meta.history.filter((event) => event.status === status);
 }
 
+/**
+ * Days since anything last moved.
+ *
+ * Booking a round is movement, so it counts. An opportunity whose newest entry
+ * is a booking made three weeks ago has still gone quiet, and the threshold
+ * catches that without a special case.
+ */
 export function idleDays(meta: OpportunityMeta, now: Date = new Date()): number {
-  const event = currentEvent(meta);
-  if (!event) return 0;
-  return Math.floor((now.getTime() - new Date(event.at).getTime()) / 86_400_000);
+  let latest: number | undefined;
+  for (const event of meta.history) {
+    const at = new Date(event.at).getTime();
+    if (latest === undefined || at > latest) latest = at;
+  }
+  if (latest === undefined) return 0;
+  return Math.floor((now.getTime() - latest) / 86_400_000);
 }
 
 export function isStalled(

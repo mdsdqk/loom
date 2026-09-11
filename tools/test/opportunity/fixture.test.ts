@@ -5,9 +5,11 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { readOpportunity, updateEvent } from "../../src/opportunity/store.js";
 import {
+  currentIsAhead,
   currentRound,
   currentStatus,
   idleDays,
+  lastRecorded,
   nextScheduled,
   recordedEvents,
   rounds,
@@ -46,10 +48,13 @@ describe("an application with a round booked", () => {
     expect(opp.meta.history).toHaveLength(6);
   });
 
-  it("reports the last thing that happened, not the next thing booked", async () => {
+  it("reports the furthest stage reached, booked rounds included", async () => {
     const opp = await readOpportunity(SLUG, root);
     expect(currentStatus(opp.meta)).toBe("interviewing");
-    expect(currentRound(opp.meta)).toBe(1);
+    /* The furthest interviewing entry is the booked round 3. */
+    expect(currentRound(opp.meta)).toBe(3);
+    expect(lastRecorded(opp.meta)?.round).toBe(1);
+    expect(currentIsAhead(opp.meta)).toBe(true);
     expect(recordedEvents(opp.meta)).toHaveLength(4);
     expect(scheduledEvents(opp.meta)).toHaveLength(2);
   });
@@ -67,11 +72,13 @@ describe("an application with a round booked", () => {
     expect(rounds(opp.meta, "interviewing").map((e) => e.round)).toEqual([1, 2, 3]);
   });
 
-  it("keeps the idle clock running while a round is merely booked", async () => {
+  it("counts idle time from the newest entry, a booking included", async () => {
     const opp = await readOpportunity(SLUG, root);
-    const days = idleDays(opp.meta, new Date("2026-09-20T00:00:00Z"));
-    expect(days).toBe(15);
-    expect(isStalled(opp.meta, DEFAULT_CONFIG, new Date("2026-09-20T00:00:00Z"))).toBe(true);
+    /* The newest entry is the booked panel on 10 Sep, not the round done on 4 Sep. */
+    expect(idleDays(opp.meta, new Date("2026-09-20T00:00:00Z"))).toBe(9);
+    expect(isStalled(opp.meta, DEFAULT_CONFIG, new Date("2026-09-20T00:00:00Z"))).toBe(false);
+    /* Long enough after the booking and nothing has moved, so it has gone quiet. */
+    expect(isStalled(opp.meta, DEFAULT_CONFIG, new Date("2026-10-01T00:00:00Z"))).toBe(true);
   });
 
   it("advances once the booked round is marked done", async () => {
@@ -83,10 +90,9 @@ describe("an application with a round booked", () => {
     );
 
     expect(currentStatus(opp.meta)).toBe("interviewing");
-    expect(currentRound(opp.meta)).toBe(2);
+    expect(lastRecorded(opp.meta)?.round).toBe(2);
     expect(opp.meta.history[4].eta).toBeUndefined();
     expect(opp.meta.history[4].revised_at).toBeDefined();
     expect(scheduledEvents(opp.meta)).toHaveLength(1);
-    expect(idleDays(opp.meta, new Date("2026-09-13T18:00:00Z"))).toBe(2);
   });
 });

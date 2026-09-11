@@ -79,6 +79,8 @@ export {
   currentRound,
   rounds,
   recordedEvents,
+  lastRecorded,
+  currentIsAhead,
   scheduledEvents,
   pendingEvents,
   openEvents,

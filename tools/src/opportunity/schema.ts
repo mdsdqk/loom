@@ -203,24 +203,26 @@ export function validateMeta(data: unknown): MetaValidationResult {
   const issues: MetaValidationIssue[] = [];
 
   /*
-   * The cache follows the last *recorded* entry. A scheduled entry sits at the
-   * end of the list but has not happened, so comparing against the raw last
-   * element reports a mismatch on every opportunity with something booked.
+   * The cache names the furthest stage anything has reached, booked entries
+   * included, so it is judged by that rule rather than by the last element.
    */
-  const recorded = meta.history.filter(isRecorded);
-  const last = recorded[recorded.length - 1];
+  const furthest = meta.history.reduce<StatusEvent | undefined>(
+    (best, event) =>
+      !best || STATUSES.indexOf(event.status) >= STATUSES.indexOf(best.status) ? event : best,
+    undefined
+  );
 
-  if (last && meta.status && meta.status !== last.status) {
+  if (furthest && meta.status && meta.status !== furthest.status) {
     issues.push({
       path: "status",
-      message: `cached status "${meta.status}" disagrees with the last recorded entry "${last.status}"`,
+      message: `cached status "${meta.status}" disagrees with the furthest entry "${furthest.status}"`,
     });
   }
 
-  if (!last && meta.status) {
+  if (!furthest && meta.status) {
     issues.push({
       path: "status",
-      message: `cached status "${meta.status}" has no recorded entry behind it`,
+      message: `cached status "${meta.status}" has no entry behind it`,
     });
   }
 

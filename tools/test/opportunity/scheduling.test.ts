@@ -9,9 +9,11 @@ import {
   updateEvent,
 } from "../../src/opportunity/store.js";
 import {
+  currentIsAhead,
   currentRound,
   currentStatus,
   idleDays,
+  lastRecorded,
   awaitingCandidate,
   nextAction,
   nextScheduled,
@@ -104,7 +106,8 @@ describe("editing an entry", () => {
 
     const opp = await updateEvent(SLUG, 1, { at: "2026-06-20T09:00:00Z" }, root);
     expect(opp.meta.history.map((e) => e.status)).toEqual(["applied", "scouted"]);
-    expect(currentStatus(opp.meta)).toBe("scouted");
+    /* Order changed; the furthest stage reached did not. */
+    expect(currentStatus(opp.meta)).toBe("applied");
   });
 
   it("refuses an index that is not there", async () => {
@@ -140,7 +143,7 @@ describe("scheduled entries", () => {
     await appendStatus(SLUG, { status: "applied", at: "2026-07-01T09:00:00Z" }, root);
   };
 
-  it("does not advance the current status", async () => {
+  it("advances the status: a booked round is the company moving you", async () => {
     await applied();
     const opp = await appendStatus(
       SLUG,
@@ -148,20 +151,42 @@ describe("scheduled entries", () => {
       root
     );
 
-    expect(currentStatus(opp.meta)).toBe("applied");
-    expect(opp.meta.status).toBe("applied");
-    expect(nextScheduled(opp.meta)?.status).toBe("interviewing");
+    expect(currentStatus(opp.meta)).toBe("interviewing");
+    expect(opp.meta.status).toBe("interviewing");
+    /* The stage moved; the round has not happened. */
+    expect(currentIsAhead(opp.meta)).toBe(true);
+    expect(lastRecorded(opp.meta)?.status).toBe("applied");
     expect(nextScheduled(opp.meta)?.eta).toBe("within 72 hours");
   });
 
-  it("does not reset the idle clock", async () => {
+  it("does not move the stage backwards for a booking at an earlier stage", async () => {
+    await applied();
+    await appendStatus(SLUG, { status: "interviewing", at: "2026-07-10T09:00:00Z" }, root);
+    const opp = await appendStatus(
+      SLUG,
+      { status: "screening", state: "scheduled", eta: "Friday", label: "follow-up call" },
+      root
+    );
+
+    expect(currentStatus(opp.meta)).toBe("interviewing");
+  });
+
+  it("stays closed whatever is still on the calendar", async () => {
+    await applied();
+    await appendStatus(SLUG, { status: "interviewing", state: "scheduled", eta: "next week" }, root);
+    const opp = await appendStatus(SLUG, { status: "closed", outcome: "rejected" }, root);
+
+    expect(currentStatus(opp.meta)).toBe("closed");
+  });
+
+  it("counts booking as movement, so the idle clock restarts", async () => {
     await applied();
     const before = (await readOpportunity(SLUG, root)).meta;
+    expect(idleDays(before)).toBeGreaterThan(0);
+
     await appendStatus(SLUG, { status: "interviewing", state: "scheduled", eta: "TBD" }, root);
     const after = (await readOpportunity(SLUG, root)).meta;
-
-    expect(idleDays(after)).toBe(idleDays(before));
-    expect(idleDays(after)).toBeGreaterThan(0);
+    expect(idleDays(after)).toBe(0);
   });
 
   it("keeps an unvalidated eta exactly as written", async () => {
@@ -188,7 +213,8 @@ describe("scheduled entries", () => {
     const opp = await appendStatus(SLUG, { status: "screening", at: "2026-07-20T09:00:00Z" }, root);
 
     expect(opp.meta.history.map((e) => e.state)).toEqual(["recorded", "recorded", "scheduled"]);
-    expect(currentStatus(opp.meta)).toBe("screening");
+    expect(currentStatus(opp.meta)).toBe("interviewing");
+    expect(lastRecorded(opp.meta)?.status).toBe("screening");
   });
 
   it("numbers a scheduled round as the next round", async () => {
@@ -201,7 +227,9 @@ describe("scheduled entries", () => {
     );
 
     expect(rounds(opp.meta, "interviewing").map((e) => e.round)).toEqual([1, 2]);
-    expect(currentRound(opp.meta)).toBe(1);
+    /* The stage is set by the booked round 2. */
+    expect(currentRound(opp.meta)).toBe(2);
+    expect(lastRecorded(opp.meta)?.round).toBe(1);
   });
 
   it("becomes a fact when marked done, taking the real date", async () => {
@@ -250,7 +278,8 @@ describe("scheduled entries", () => {
     );
 
     const opp = await readOpportunity(SLUG, root);
-    expect(currentStatus(opp.meta)).toBe("applied");
+    expect(currentStatus(opp.meta)).toBe("interviewing");
+    expect(lastRecorded(opp.meta)?.status).toBe("applied");
     expect(nextScheduled(opp.meta)?.eta).toBe("within 72 hrs");
     expect(opp.issues).toEqual([]);
   });
@@ -289,7 +318,7 @@ describe("the cached status tracks what happened, not what is booked", () => {
   it("does not report a mismatch when a scheduled entry sits last", async () => {
     await seed(
       [
-        "status: screening",
+        "status: interviewing",
         "history:",
         "  - at: 2026-09-01T09:00:00Z",
         "    status: screening",
@@ -303,7 +332,7 @@ describe("the cached status tracks what happened, not what is booked", () => {
 
     const opp = await readOpportunity(SLUG, root);
     expect(opp.issues).toEqual([]);
-    expect(currentStatus(opp.meta)).toBe("screening");
+    expect(currentStatus(opp.meta)).toBe("interviewing");
   });
 
   it("still reports a genuinely stale cache", async () => {
@@ -318,7 +347,7 @@ describe("the cached status tracks what happened, not what is booked", () => {
     );
 
     const opp = await readOpportunity(SLUG, root);
-    expect(opp.issues.join()).toMatch(/disagrees with the last recorded entry "screening"/);
+    expect(opp.issues.join()).toMatch(/disagrees with the furthest entry "screening"/);
   });
 
   it("caches the latest entry in time after a backdated write, not the last appended", async () => {
@@ -338,7 +367,7 @@ describe("pending is distinct from scheduled", () => {
     await appendStatus(SLUG, { status: "applied", at: "2026-07-01T09:00:00Z" }, root);
   };
 
-  it("neither advances the status nor resets the idle clock", async () => {
+  it("advances the status, because an assessment being set is the stage moving", async () => {
     await applied2();
     const opp = await appendStatus(
       SLUG,
@@ -346,8 +375,9 @@ describe("pending is distinct from scheduled", () => {
       root
     );
 
-    expect(currentStatus(opp.meta)).toBe("applied");
-    expect(idleDays(opp.meta)).toBeGreaterThan(0);
+    expect(currentStatus(opp.meta)).toBe("screening");
+    expect(currentIsAhead(opp.meta)).toBe(true);
+    expect(lastRecorded(opp.meta)?.status).toBe("applied");
   });
 
   it("tells the candidate's move apart from the company's", async () => {

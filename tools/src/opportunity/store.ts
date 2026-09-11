@@ -156,7 +156,16 @@ export async function readOpportunity(slug: string, root?: string): Promise<Oppo
     slug,
     meta,
     artifacts: await listArtifacts(paths.artifactsDir),
-    issues: result.issues.map((i) => `${i.path}: ${i.message}`),
+    /*
+     * A disagreeing `status` is not worth reporting: it is a denormalization of
+     * the history that has just been recomputed above and will be rewritten on
+     * the next save. Every file written before a change to the derivation rule
+     * would otherwise light up with an issue the reader cannot act on.
+     * `validateMeta` still reports it for callers checking a file as-is.
+     */
+    issues: result.issues
+      .filter((i) => i.path !== "status")
+      .map((i) => `${i.path}: ${i.message}`),
   };
 }
 
@@ -562,6 +571,8 @@ export {
   currentRound,
   rounds,
   recordedEvents,
+  lastRecorded,
+  currentIsAhead,
   scheduledEvents,
   pendingEvents,
   openEvents,

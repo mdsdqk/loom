@@ -1,4 +1,6 @@
 import {
+  currentEvent,
+  currentIsAhead,
   isLoopable,
   type ArtifactPresence,
   type OpportunityMeta,
@@ -27,10 +29,17 @@ export function StatusCell({
   round?: number;
   action?: StatusEvent;
 }) {
-  const event = meta.history.filter((e) => e.state === "recorded").at(-1);
+  const event = currentEvent(meta);
+  const ahead = currentIsAhead(meta);
   return (
     <span className="flex min-w-0 items-center gap-2.5">
-      <span className={`caps shrink-0 ${toneText[tone]}`}>{statusText(event)}</span>
+      <span
+        className={`caps shrink-0 ${toneText[tone]}`}
+        title={ahead ? "this stage is set but has not happened yet" : undefined}
+      >
+        {statusText(event)}
+        {ahead && <span className="text-ink-4"> *</span>}
+      </span>
       {round !== undefined && round > 1 && (
         <span className="caps tnum shrink-0 text-ink-4">R{round}</span>
       )}

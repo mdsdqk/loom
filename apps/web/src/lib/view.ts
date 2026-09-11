@@ -1,8 +1,9 @@
-import type {
-  Opportunity,
-  OpportunityMeta,
-  Status,
-  StatusEvent,
+import {
+  currentEvent,
+  type Opportunity,
+  type OpportunityMeta,
+  type Status,
+  type StatusEvent,
 } from "@loom/tools/opportunity/pure";
 
 /**
@@ -15,7 +16,7 @@ export const WINDOW_DAYS = 84;
 export type Tone = "neutral" | "attention" | "good";
 
 export function toneOf(opportunity: Opportunity, stalled: boolean): Tone {
-  const event = opportunity.meta.history.filter((e) => e.state === "recorded").at(-1);
+  const event = currentEvent(opportunity.meta);
   if (!event) return "neutral";
   if (event.status === "closed") {
     if (event.outcome === "accepted") return "good";

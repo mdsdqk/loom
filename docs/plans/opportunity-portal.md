@@ -128,10 +128,22 @@ An entry carries a `state`, and the distinction that matters day to day is not
 | `scheduled` | Booked; nothing is required from the candidate until it arrives. | Theirs |
 | `pending` | Work the candidate owes against a deadline — an assessment, a take-home. | **Yours** |
 
-Neither `scheduled` nor `pending` advances the status or resets the idle clock;
-both are completed by hand. `pending` sorts first, takes the accent colour, and
-drives a "Your move" filter, because it is the only one that is actionable
-today.
+Both advance the status. Booking an interview is the company moving the
+candidate to the interview stage, so an opportunity with an assessment set reads
+`interviewing`, not `screening`. The status is the furthest stage any entry has
+reached, which also keeps it from going backwards when a follow-up call is
+booked mid-loop. `closed` is last in the pipeline, so a closed opportunity stays
+closed whatever is still on the calendar.
+
+A stage that has not happened yet is marked with `*` in the register, and the
+badge beside it says whether it is scheduled or pending.
+
+Booking is movement, so it restarts the idle clock. An opportunity whose newest
+entry is a booking made three weeks ago has still gone quiet, and the threshold
+catches that without a special case.
+
+`pending` sorts first, takes the accent colour, and drives a filter, because it
+is the only one that is actionable today.
 
 ```yaml
   - at: 2026-09-09T10:00:00Z     # when it was put on the calendar

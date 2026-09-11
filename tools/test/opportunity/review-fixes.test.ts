@@ -79,7 +79,7 @@ describe("reads normalize, not just writes", () => {
 });
 
 describe("the status cache cannot outlive its entry", () => {
-  it("reports no status when only scheduled entries remain", async () => {
+  it("still reports a status when only scheduled entries remain", async () => {
     await seed(
       [
         "status: applied",
@@ -92,24 +92,30 @@ describe("the status cache cannot outlive its entry", () => {
     );
 
     const opp = await readOpportunity(SLUG, root);
-    expect(currentStatus(opp.meta)).toBeUndefined();
-    expect(opp.meta.status).toBeUndefined();
+    expect(currentStatus(opp.meta)).toBe("interviewing");
+    expect(opp.meta.status).toBe("interviewing");
   });
 
-  it("flags a cache with nothing recorded behind it", () => {
+  it("flags a cache with no entry behind it at all", () => {
+    const result = validateMeta({ company: "A", role: "R", status: "applied", history: [] });
+    expect(result.issues.map((i) => i.message).join()).toMatch(/no entry behind it/);
+  });
+
+  it("flags a cache that disagrees with the furthest entry", () => {
     const result = validateMeta({
       company: "A",
       role: "R",
       status: "applied",
       history: [{ at: "2026-09-01T00:00:00Z", status: "interviewing", state: "scheduled" }],
     });
-    expect(result.issues.map((i) => i.message).join()).toMatch(/no recorded entry behind it/);
+    expect(result.issues.map((i) => i.message).join()).toMatch(
+      /disagrees with the furthest entry/
+    );
   });
 
-  it("drops the key from disk when the last recorded entry is removed", async () => {
+  it("drops the key from disk when every entry is removed", async () => {
     await seed("history: []");
     await appendStatus(SLUG, { status: "applied" }, root);
-    await appendStatus(SLUG, { status: "interviewing", state: "scheduled", eta: "soon" }, root);
 
     const opp = await removeEvent(SLUG, 0, root);
     expect(opp.meta.status).toBeUndefined();
