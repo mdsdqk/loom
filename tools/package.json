@@ -3,6 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./opportunity": {
+      "types": "./dist/opportunity/index.d.ts",
+      "default": "./dist/opportunity/index.js"
+    },
+    "./resume": {
+      "types": "./dist/resume/schema.d.ts",
+      "default": "./dist/resume/schema.js"
+    },
+    "./package.json": "./package.json",
+    "./opportunity/pure": {
+      "types": "./dist/opportunity/pure.d.ts",
+      "default": "./dist/opportunity/pure.js"
+    }
+  },
   "bin": {
     "pdf-parser": "dist/pdf-parser-cli.js",
     "csv-parser": "dist/csv-parser-cli.js",
@@ -37,12 +58,12 @@
     "pdfjs-dist": "^4.9.155",
     "playwright": "^1.62.1",
     "xlsx": "^0.18.5",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.7.2",
-    "@types/nunjucks": "^3.2.6",
-    "yaml": "^2.9.0"
+    "@types/nunjucks": "^3.2.6"
   }
 }

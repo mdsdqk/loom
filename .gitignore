@@ -23,3 +23,5 @@ opportunities/*
 #creds
 .env
 **/.env
+# build artifacts
+*.tsbuildinfo

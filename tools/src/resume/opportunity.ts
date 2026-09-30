@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { stringify } from "yaml";
 
@@ -182,10 +182,25 @@ export async function createOpportunity(
     throw new Error(`Opportunity directory already exists: ${opportunityDir}`);
   }
 
+  /*
+   * Everything after the mkdir can fail: a master resume path that does not
+   * exist, a full disk. Leaving the directory behind would make the retry look
+   * like a duplicate, and the only way out would be deleting the folder by
+   * hand. Since the directory did not exist a moment ago, removing it is safe.
+   */
   await mkdir(artifactsDir, { recursive: true });
-  await copyFile(options.jdPath, join(artifactsDir, "jd.md"));
-  await copyFile(options.masterResumePath, join(artifactsDir, "resume.yml"));
-  await writeFile(join(opportunityDir, "meta.yml"), stringify({ company, role: title, job_id: jobId, posted_date: postedDate }), "utf8");
+  try {
+    await copyFile(options.jdPath, join(artifactsDir, "jd.md"));
+    await copyFile(options.masterResumePath, join(artifactsDir, "resume.yml"));
+    await writeFile(
+      join(opportunityDir, "meta.yml"),
+      stringify({ company, role: title, job_id: jobId, posted_date: postedDate }),
+      "utf8"
+    );
+  } catch (error) {
+    await rm(opportunityDir, { recursive: true, force: true }).catch(() => {});
+    throw error;
+  }
 
   return { slug, opportunityDir, artifactsDir, company, title, jobId, postedDate };
 }

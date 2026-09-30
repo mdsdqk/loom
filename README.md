@@ -19,9 +19,12 @@ rules.
 ## Repo layout
 
 ```
-apps/web/       Web application
+apps/web/       Opportunity portal (Vite + React client, Hono API)
 tools/          Standalone CLI/library utilities (pdf-parser, csv-parser)
+opportunities/  One directory per opportunity: meta.yml + artifacts/
+candidate/      One candidate's workspace: profile, resumes, imports
 docs/           Product docs, ADRs, wayfinding maps
+loom.config.yml Portal settings (stall thresholds); optional
 CONTEXT.md      Domain model and terminology
 ```
 
@@ -50,7 +53,9 @@ e.g. `pnpm --filter @loom/tools test`.
 
 - **`tools/`** — `@loom/tools`, CLI/library utilities for turning PDFs and
   CSV/Excel files into structured YAML. See `tools/README.md` for details.
-- **`apps/web/`** — the web application.
+- **`apps/web/`** — `@loom/web`, the opportunity portal. A Vite + React client
+  over a Hono API, reading and writing `opportunities/` through `@loom/tools`.
+  Run it with `pnpm --filter @loom/web dev`.
 
 ## License
 
