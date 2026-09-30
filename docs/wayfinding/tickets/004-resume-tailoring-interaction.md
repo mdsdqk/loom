@@ -221,7 +221,7 @@ Claims are usable. Reported skills and pending claims require HITL before
 prominent or factual use.
 
 **Blocked by**: `003` producing a usable Candidate Profile and the separate
-`/build-master-resume` skill producing an accepted Master Resume for at least
+`/create-master-resume` skill producing an accepted Master Resume for at least
 one approved Target Track.
 
 **Grounding requirement**: generated prose retains active Evidence Claim IDs.

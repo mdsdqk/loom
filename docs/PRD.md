@@ -5,7 +5,7 @@
 > **Scope note (2026-08-24):** This document describes Loom's long-term product
 > thesis and is not the authoritative MVP specification. MVP v1 is the
 > single-user, local workflow defined in `docs/wayfinding/map-v1.md`: Profile
-> Build, separate per-track Master Resume Build, tailoring for supplied job
+> Build, separate per-track Create Master Resume, tailoring for supplied job
 > descriptions, review, and PDF export. Job discovery, matching, application
 > tracking, learning, and the end-user web experience remain later work.
 >

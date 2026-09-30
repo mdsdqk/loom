@@ -35,8 +35,8 @@ questionnaire. Its canonical instructions live under
 `.agents/skills/build-profile/`.
 
 Profile Build produces a usable Candidate Profile. It then asks whether to
-invoke the separate `/build-master-resume` skill for each approved Target
-Track. Master Resume Build is independently callable and receives no job
+invoke the separate `/create-master-resume` skill for each approved Target
+Track. Create Master Resume is independently callable and receives no job
 description.
 
 Updating an already-usable Candidate Profile is not a separate skill —
@@ -162,12 +162,12 @@ emphasis, but never unsupported scope or seniority.
 
 Profile state is one of:
 
-- `in_progress`: resumable, unavailable to Master Resume Build.
+- `in_progress`: resumable, unavailable to Create Master Resume.
 - `usable_with_gaps`: required checkpoints and blocking evals pass; pending
   claims remain excluded.
 - `complete`: no known required gap or unresolved conflict remains.
 
-Master Resume Build accepts `usable_with_gaps` and `complete`, never
+Create Master Resume accepts `usable_with_gaps` and `complete`, never
 `in_progress`. Before promotion, the profile draft must pass deterministic
 schema validation and the separate grounding eval. If a canonical profile
 already exists, it is backed up before the validated draft replaces it.
@@ -207,7 +207,7 @@ are deferred. See ADR 0004.
 - Validated `candidate/profile.yml`.
 - Candidate-wide normalized sources under `candidate/sources/`.
 - Resumable run state, exact transcript, draft, and eval report.
-- Approved Target Tracks ready for `/build-master-resume`.
+- Approved Target Tracks ready for `/create-master-resume`.
 
-Master Resumes are outputs of the separate Master Resume Build skill, not
+Master Resumes are outputs of the separate Create Master Resume skill, not
 direct Profile Build artifacts.

@@ -15,7 +15,7 @@ the first acceptance bar.
 ```text
 /build-profile
   -> Candidate Profile
-  -> /build-master-resume per approved Target Track
+  -> /create-master-resume per approved Target Track
   -> accepted Master Resumes
   -> tailor-resume with a supplied JD
   -> review and edit
@@ -93,7 +93,7 @@ tracking, or learning system in v1.
 8. Promotes the draft only after blocking schema and grounding evals pass.
 
 Profile state is `in_progress`, `usable_with_gaps`, or `complete`. Only the
-latter two feed Master Resume Build.
+latter two feed Create Master Resume.
 
 A single `/build-profile` handles both onboarding and later updates — there
 is no separate `/refine-profile`. MVP v1 can resume an incomplete run,
@@ -120,9 +120,9 @@ source records, and exact transcript events. Eval reports are retained.
 Source and transcript references include their Profile Build run ID so later
 reconciliation runs cannot create ambiguous references.
 
-## Master Resume Build
+## Create Master Resume
 
-`/build-master-resume <track>` is a separate conversational skill. Its inputs
+`/create-master-resume <track>` is a separate conversational skill. Its inputs
 are one usable Candidate Profile, one approved Target Track, general
 preferences, and presentation preferences. It receives no JD.
 
@@ -133,9 +133,9 @@ drafting. Schema and grounding evals run before candidate review and again
 after candidate edits. Explicit candidate approval promotes the validated
 draft to `candidate/tracks/{track}/resume.yml`.
 
-Master Resume Build never edits the canonical profile directly. Factual
+Create Master Resume never edits the canonical profile directly. Factual
 clarification stops the run and directs the candidate through `/build-profile`
-reconciliation. Master Resume Build is then restarted from the promoted
+reconciliation. Create Master Resume is then restarted from the promoted
 profile.
 
 Target Tracks pair role family and level, for example
@@ -177,7 +177,7 @@ HTML sanitization still need a dedicated implementation grilling session.
 - **[001: Tech stack and local execution](tickets/001-tech-stack-and-deployment.md)**
 - **[002: Candidate, profile, resume, and opportunity model](tickets/002-candidate-and-job-data-model.md)**
 - **[003: Profile Build](tickets/003-profile-build.md)**
-- **[009: Master Resume Build](tickets/009-master-resume-build.md)**
+- **[009: Create Master Resume](tickets/009-master-resume-build.md)**
 - **[004: Resume tailoring interaction](tickets/004-resume-tailoring-interaction.md)**, reopened
 - **[007: Architecture and orchestration](tickets/007-architecture-and-orchestration.md)**
 - **[008: Resume rendering](tickets/008-resume-rendering-yaml-to-pdf.md)**
@@ -213,7 +213,7 @@ HTML sanitization still need a dedicated implementation grilling session.
 Profile Build product decisions and its implementation plan are approved.
 Implementation should start by freezing executable Candidate Profile and Master
 Resume schemas plus synthetic fixtures, then build source normalization,
-resumable Profile Build, Master Resume Build, and their validators/evals.
+resumable Profile Build, Create Master Resume, and their validators/evals.
 
 Tailoring and rendering still require separate implementation grilling before
 the full MVP is planning-complete.

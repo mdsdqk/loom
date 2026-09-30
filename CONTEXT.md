@@ -16,7 +16,7 @@ an existing profile is backed up, treated as the seed, walked
 checkpoint-by-checkpoint for "still accurate? anything to add?" rather than
 started fresh, and a new validated profile is promoted on top of it once
 the run's blocking evals pass. After that profile becomes usable, Profile
-Build offers to invoke Master Resume Build for each newly-approved Target
+Build offers to invoke Create Master Resume for each newly-approved Target
 Track. How much a reconciliation run can narrow itself to just what
 changed (versus re-walking every checkpoint) is a v2 personalization
 refinement — v1 can be blunter about it as long as re-running is always
@@ -65,7 +65,7 @@ generation.
 
 Candidate Profile usability is explicit:
 
-- **in_progress** — resumable, but unavailable to Master Resume Build.
+- **in_progress** — resumable, but unavailable to Create Master Resume.
 - **usable_with_gaps** — required checkpoints and blocking evals passed;
   unresolved claims remain pending and are excluded from generation.
 - **complete** — no known required gap or unresolved conflict remains.
@@ -78,7 +78,7 @@ resume for that track, with no job-specific tailoring. It reflects the
 candidate's real structure, style, and emphasis for that track. It is not
 a filtered or reordered view of the Candidate Profile; it is the human-facing
 resume itself. It exists only for approved Target Tracks and is produced by
-Master Resume Build after Profile Build (see Track Readiness).
+Create Master Resume after Profile Build (see Track Readiness).
 
 Per-opportunity tailored resumes are generated from the Master Resume
 *and* the Candidate Profile together: the Master Resume supplies the
@@ -86,19 +86,19 @@ candidate's own structure/voice/priorities, while the Candidate Profile
 supplies additional nuance and evidence (e.g. the obscure-but-relevant
 fact) that the Master Resume alone wouldn't surface.
 
-## Master Resume Build
+## Create Master Resume
 
-The conversational skill (`/build-master-resume`) that turns one usable
+The conversational skill (`/create-master-resume`) that turns one usable
 Candidate Profile, one approved Target Track, and the candidate's
 presentation preferences into a Master Resume. It receives no job
 description. Profile Build can offer to invoke it after onboarding, but it
 also remains independently callable.
 
-Master Resume Build may ask the candidate to confirm relevant pending
+Create Master Resume may ask the candidate to confirm relevant pending
 evidence before drafting. It never edits `candidate/profile.yml` directly.
 When a factual clarification or correction is needed, it stops and directs the
 candidate through `/build-profile` reconciliation. The candidate then restarts
-Master Resume Build from the newly promoted profile. This avoids bypassing the
+Create Master Resume from the newly promoted profile. This avoids bypassing the
 Profile Build transaction or depending on cross-skill suspended state. Tone,
 ordering, emphasis, and formatting remain presentation choices in the resume.
 A draft becomes the track's `resume.yml` only after schema and grounding evals

@@ -9,8 +9,8 @@ description: Conversational onboarding that turns a candidate's resume, LinkedIn
 
 Turns whatever career material a candidate already has into a structured,
 evidence-backed **Candidate Profile** (`candidate/profile.yml`) — not a
-resume. It's the shared context layer everything downstream (Master
-Resume Build, tailoring) draws from. See `/CONTEXT.md` for the full
+resume. It's the shared context layer everything downstream (Create
+Master Resume, tailoring) draws from. See `/CONTEXT.md` for the full
 vocabulary this skill uses throughout (Candidate Profile, Evidence Claim,
 Confirmation tiers, Target Track, Track Readiness).
 
@@ -25,7 +25,7 @@ separate flow — see Start-of-run below.
 ## Non-goals
 
 - Not job-interview prep.
-- Does not produce a Master Resume — that's `/build-master-resume`, a
+- Does not produce a Master Resume — that's `/create-master-resume`, a
   separate skill this one can offer to invoke once the profile is usable,
   but never runs itself. If that skill is not present in this workspace,
   say so after promotion and stop; do not fail the profile run.
@@ -170,8 +170,8 @@ scope, a claim that's technically complete but not actually useful.
 7. **`preferences`** — Preferences and constraints — explicit
    likes/dislikes/hard limits, not inferred from silence.
 8. **`compensation`** — Compensation and logistics — optional,
-   future-facing matching data. Tell the candidate plainly that Master
-   Resume Build doesn't read these fields, so they understand why they're
+   future-facing matching data. Tell the candidate plainly that Create
+   Master Resume doesn't read these fields, so they understand why they're
    being asked at all.
 9. **`tracks`** — Target Track selection — ask the candidate's target
    tracks explicitly; cross-check against what the evidence itself
@@ -294,7 +294,7 @@ something for the evidence to overrule.
    `candidate_acknowledged: true` (`EVAL.md` must reject the combination
    otherwise); reaching that acknowledgement honestly is this step's
    actual job. A track built this way can use aspirational framing later
-   in Master Resume Build, but never unsupported scope or seniority (see
+   in Create Master Resume, but never unsupported scope or seniority (see
    `CONTEXT.md`, Track Readiness).
 
 ## Termination
@@ -374,8 +374,8 @@ Before promotion:
 5. For each newly-approved Target Track (`approved_to_build: true` and
    not already backed by an accepted Master Resume at
    `candidate/tracks/{track-id}/resume.yml`), ask whether to invoke
-   `/build-master-resume` for it now. This skill never produces a Master
-   Resume itself. If `/build-master-resume` is not available in this
+   `/create-master-resume` for it now. This skill never produces a Master
+   Resume itself. If `/create-master-resume` is not available in this
    workspace, tell the candidate that is the next step and stop.
 
 **What this run leaves behind**, regardless of whether promotion happens

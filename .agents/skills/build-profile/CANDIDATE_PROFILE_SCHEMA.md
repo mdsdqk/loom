@@ -285,6 +285,6 @@ surface. For consistency, use: `current_fixed`, `current_variable`,
 label (e.g. `United States`, `India`, `EU`). Omit it only when the
 expectation is not geography-specific.
 
-Stored for future matching (v2). Master Resume Build does not read these
+Stored for future matching (v2). Create Master Resume does not read these
 fields — tell the candidate that explicitly when offering to record them,
 so they know why they're being asked.

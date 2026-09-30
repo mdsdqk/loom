@@ -52,7 +52,7 @@ Design the architecture for MVP v1 resume tailoring. The core question: How shou
    - Or implicit (file structure represents state)?
 
 4. **CLI entry points**: How should user trigger each step?
-   - `/build-profile` and `/build-master-resume` for conversational work?
+   - `/build-profile` and `/create-master-resume` for conversational work?
    - `pnpm run tailor-resume {jobDescriptionPath}` (generates tailored resume)?
    - `pnpm run export {resumePath}` (converts to PDF)?
    - Or one mega script that handles all steps?
@@ -68,7 +68,7 @@ Design the architecture for MVP v1 resume tailoring. The core question: How shou
 **Entry points**:
 - `/build-profile` - conversational onboarding skill that produces a usable
   Candidate Profile.
-- `/build-master-resume <track>` - conversational skill that produces and
+- `/create-master-resume <track>` - conversational skill that produces and
   validates one candidate-accepted Master Resume.
 - `pnpm run tailor-resume {jobDescriptionPath}` - deterministic orchestration
   around AI generation (Candidate Profile + Master Resume + Job → YAML +
@@ -78,7 +78,7 @@ Design the architecture for MVP v1 resume tailoring. The core question: How shou
 **State management**: Profile Build uses explicit run state rather than file
 existence. `session.yml` records status and checkpoints; exact conversation
 events live in `transcript.jsonl`; a validated profile draft is promoted to
-`candidate/profile.yml`. Master Resume Build similarly distinguishes draft,
+`candidate/profile.yml`. Create Master Resume similarly distinguishes draft,
 eval report, and accepted `resume.yml`. Scripted downstream steps use explicit
 artifact files and metadata.
 

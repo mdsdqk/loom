@@ -231,7 +231,7 @@ Generated prose, including summaries, role introductions, bullets, projects,
 and recognition, references active Candidate Profile Evidence Claim IDs.
 Structured identity, company, role, date, education, and demonstrated-skill
 fields use `profile_ref` and must exactly match the referenced profile record.
-`/build-master-resume` receives no job description. A draft becomes the track's
+`/create-master-resume` receives no job description. A draft becomes the track's
 `resume.yml` only after schema and grounding evals pass and the candidate
 explicitly accepts it.
 

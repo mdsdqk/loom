@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Profile and Master Resume Build run as conversational skills
+# Profile Build and Create Master Resume run as conversational skills
 
 Ticket 007 (Architecture & Orchestration) had assumed `pnpm run questionnaire`
 as the entry point for onboarding — an interactive stdin prompt loop, in
@@ -20,8 +20,8 @@ agent skill, not a `pnpm` CLI script. Its canonical instructions live under
 invokable in Claude Code, Cursor, Codex, or another compatible agent host.
 
 Profile Build ends with a usable Candidate Profile. It then offers to invoke
-`/build-master-resume` once for each approved Target Track. Master Resume
-Build is a separate conversational skill because it has its own candidate
+`/create-master-resume` once for each approved Target Track. Create Master
+Resume is a separate conversational skill because it has its own candidate
 review loop and grounding eval, and must be callable later without rerunning
 onboarding.
 

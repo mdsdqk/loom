@@ -4,7 +4,7 @@ status: accepted
 
 # Profile Build's grounding eval runs as a separate, cheaper-model subagent
 
-Profile Build and Master Resume Build rely on model judgment, so a
+Profile Build and Create Master Resume rely on model judgment, so a
 grounding eval is the main defense against violating PRD principle 4.2
 ("must not fabricate"). The obvious-seeming approach, having the producing
 agent check itself, was considered and rejected. A model checking its own

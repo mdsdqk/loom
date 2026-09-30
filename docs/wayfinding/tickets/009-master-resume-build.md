@@ -1,6 +1,6 @@
 ---
 id: "009"
-title: "Master Resume Build: Per-Track Draft, Eval, Review, and Acceptance"
+title: "Create Master Resume: Per-Track Draft, Eval, Review, and Acceptance"
 type: "grilling"
 status: "resolved"
 assignee: null
@@ -15,7 +15,7 @@ for one approved Target Track without job-specific tailoring.
 
 ## Resolution
 
-`/build-master-resume <track>` is a separate portable conversational skill.
+`/create-master-resume <track>` is a separate portable conversational skill.
 Profile Build offers to invoke it after onboarding, but it remains
 independently callable so one track can be rebuilt without repeating the
 profile interview.
@@ -46,7 +46,7 @@ It receives no job description.
 7. Present the draft and any readiness warning to the candidate.
 8. Apply candidate edits. Presentation changes remain in the resume. Factual
    corrections stop the run and use the same `/build-profile` reconciliation
-   path before Master Resume Build is restarted.
+   path before Create Master Resume is restarted.
 9. Re-run schema and grounding evals.
 10. Promote the draft only after explicit candidate approval.
 

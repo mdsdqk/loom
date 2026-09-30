@@ -1,4 +1,4 @@
-# Implementation plan: Profile Build and Master Resume Build
+# Implementation plan: Profile Build and Create Master Resume
 
 Status: approved for implementation after the 2026-08-24 design grilling.
 
@@ -11,7 +11,7 @@ Implement two portable conversational skills:
 
 1. `/build-profile` turns one candidate's existing career material into a
    concise, grounded, resumable Candidate Profile with approved Target Tracks.
-2. `/build-master-resume <track>` turns that profile and one approved Target
+2. `/create-master-resume <track>` turns that profile and one approved Target
    Track into a grounded, candidate-accepted Master Resume without a JD.
 
 MVP v1 targets one candidate, multiple tracks, and supplied JDs. Reusable
@@ -31,7 +31,7 @@ acceptance bar.
   profile is a normal, always-available path — not deferred to a separate
   skill. A single `/build-profile` handles first-run onboarding and later
   updates; there is no `/refine-profile`.
-- Master Resume Build is separate from Profile Build and receives no JD.
+- Create Master Resume is separate from Profile Build and receives no JD.
 - V1 reads the complete Candidate Profile during downstream generation.
 - V1 prompt-injection resistance is best effort, not an enforced sandbox.
 - Persistent Master Resume version history is deferred.
@@ -91,7 +91,7 @@ platform-reserved names.
 - `GAP-CHECKLIST.md`: deterministic failures and non-blocking interview prompts.
 - `EVAL.md`: grounding judge input and result contract.
 
-### `.agents/skills/build-master-resume/`
+### `.agents/skills/create-master-resume/`
 
 - `SKILL.md`: track selection, pending-evidence HITL, drafting, review,
   re-evaluation, and promotion.
@@ -131,7 +131,7 @@ logistics: {...}
 ```
 
 Compensation and logistics are optional. Profile Build explains that they are
-stored for future matching and are not used by Master Resume Build.
+stored for future matching and are not used by Create Master Resume.
 
 ### Structured dates
 
@@ -228,7 +228,7 @@ positioning but do not silently gate tracks.
 ### Optional compensation and logistics
 
 Profile Build offers to record these fields for post-v1 matching and explains
-that Master Resume Build does not consume them:
+that Create Master Resume does not consume them:
 
 ```yaml
 compensation:
@@ -517,7 +517,7 @@ new candidate clarification that updates the Candidate Profile first.
 Ambiguous and contradicted findings use the same HITL path. Candidate edits to
 a Master Resume trigger another schema and grounding eval before acceptance.
 
-## Master Resume Build lifecycle
+## Create Master Resume lifecycle
 
 Inputs:
 
@@ -532,10 +532,10 @@ Process:
 
 1. Validate profile state and track approval.
 2. Surface materially useful pending evidence for HITL confirmation or
-   rejection. If the candidate clarifies it, stop Master Resume Build and
+   rejection. If the candidate clarifies it, stop Create Master Resume and
    direct the candidate through `/build-profile` reconciliation. Never edit
    `profile.yml` directly. After the validated profile is promoted, restart
-   Master Resume Build from that profile.
+   Create Master Resume from that profile.
 3. Draft an honest track-specific resume using only active Evidence Claims.
 4. For `stretch` or `insufficient` tracks, emphasize transferable evidence and
    trajectory without overstating current scope or seniority.
@@ -544,7 +544,7 @@ Process:
 7. Present the draft and readiness warning to the candidate.
 8. Apply candidate edits. Presentation changes stay in the resume. A factual
    change stops the workflow and follows the same `/build-profile`
-   reconciliation path before Master Resume Build is restarted.
+   reconciliation path before Create Master Resume is restarted.
 9. Re-run schema and grounding evals.
 10. On explicit approval, promote the draft to `resume.yml`.
 
@@ -596,10 +596,10 @@ extend it with `@convex-dev/eslint-plugin`.
 - `.agents/skills/build-profile/SESSION-SCHEMA.md`
 - `.agents/skills/build-profile/GAP-CHECKLIST.md`
 - `.agents/skills/build-profile/EVAL.md`
-- `.agents/skills/build-master-resume/SKILL.md`
-- `.agents/skills/build-master-resume/MASTER-RESUME-SCHEMA.md`
-- `.agents/skills/build-master-resume/EVAL.md`
-- `.claude/skills/build-profile/` and `.claude/skills/build-master-resume/`
+- `.agents/skills/create-master-resume/SKILL.md`
+- `.agents/skills/create-master-resume/MASTER-RESUME-SCHEMA.md`
+- `.agents/skills/create-master-resume/EVAL.md`
+- `.claude/skills/build-profile/` and `.claude/skills/create-master-resume/`
   — thin redirect files ("read and follow
   `.agents/skills/<name>/SKILL.md`"), not symlinks (see Host discovery
   below for why).
@@ -688,7 +688,7 @@ final manual acceptance.
 6. Build one strong and one stretch Master Resume.
 7. Confirm pending evidence stops generation and directs the candidate through
    `/build-profile` reconciliation.
-8. Restart Master Resume Build after promotion, edit a factual resume field,
+8. Restart Create Master Resume after promotion, edit a factual resume field,
    and confirm it follows the same stop/reconcile/restart path.
 9. Explicitly accept the validated Master Resumes.
 10. Confirm ignored personal artifacts do not appear in git status.

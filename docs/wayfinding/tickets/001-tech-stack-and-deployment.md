@@ -13,8 +13,8 @@ blocking: ["002", "005", "007"]
 Lock down the tech stack for MVP v1 resume tailoring (CLI + file-based, no web app):
 
 1. **Runtime & Language**: Confirm Node.js + TypeScript? Any version constraints?
-2. **Entry Points**: How do users trigger conversational Profile and Master
-   Resume Build, scripted tailoring, and PDF export?
+2. **Entry Points**: How do users trigger conversational Profile Build and
+   Create Master Resume, scripted tailoring, and PDF export?
 3. **Credential Handling**: Users bring BYOK Claude API credentials. How to handle?
    - Pass via Claude Agent SDK runtime (credentials never stored)?
    - Store in `.env` locally (user's responsibility)?
@@ -38,11 +38,11 @@ Lock down the tech stack for MVP v1 resume tailoring (CLI + file-based, no web a
 **CLOSED** - MVP v1 tech stack locked:
 
 - **Runtime**: Node.js + TypeScript (existing Turborepo setup)
-- **Entry points**: portable conversational skills for Profile and Master
-  Resume Build; pnpm scripts for deterministic tailoring and export steps
+- **Entry points**: portable conversational skills for Profile Build and
+  Create Master Resume; pnpm scripts for deterministic tailoring and export steps
 - **Orchestration**: Direct scripts (no framework for MVP v1). Evaluate LangGraph/others v2 when multi-turn AI or complex branching needed.
 - **Model integration**: the user brings the agent host, model access, and
-  provider credentials. Profile and Master Resume Build use the host model;
+  provider credentials. Profile Build and Create Master Resume use the host model;
   grounding evals use a separate cheaper available model. Tailoring may use
   the configured Claude SDK directly in v1.
 - **Vendor agnostic**: Direct SDK for MVP, document abstraction points for v2 refactor
